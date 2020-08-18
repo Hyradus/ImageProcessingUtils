@@ -15,9 +15,12 @@ import os
 from datetime import datetime
 import shutil
 from PIL import Image
+import cv2 as cv
+global folder
+global tiles
 
-
-PATH = #INSERT PATH TO FILE DIRECTORY
+PATH = '/media/gnodj/W-DATS/DeepLearning/Tensorflow/HiRiSE_Dataset/HIRISE_JP2/PNGs/Resized'
+tiles = 2
 
 def answer(question):
     answ = None
@@ -56,19 +59,18 @@ def get_paths(PATH, ext):
 
 
 image_list = get_paths(PATH, 'png') #edit image file extension
-global folder
-global tiles
 
 os.chdir(PATH)
-folder = make_folder('Processed')
-tiles = 10
+folder = make_folder('Processed_original')
 
 def slicer(image):
     print('\nSlicing: ', image, ' in ', tiles, ' tiles.')
     Image.MAX_IMAGE_PIXELS = None
+    # height = cv.imread(image).shape[0]
+    # if height > 2048:
     ims.slice(image, tiles)
     shutil.move(image, folder)
-
+        
 def parallel_slicer(files, JOBS):
     from joblib import Parallel, delayed
     Parallel (n_jobs=JOBS)(delayed(slicer)(files[i])
