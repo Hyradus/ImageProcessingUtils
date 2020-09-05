@@ -31,6 +31,8 @@ global biggest_contour
 global img
 global img_precrop
 global im
+global ixt
+global oxt
 
 def answer(question):
     answ = None
@@ -61,10 +63,10 @@ def make_folder(name):
         print('Created new ', name,' Folder')
     return(folder)
 
-def get_paths(PATH, ext):
+def get_paths(PATH, ixt):
     import glob
     os.chdir(PATH)
-    filename = [i for i in glob.glob('**/*.'+ext,recursive=True)]
+    filename = [i for i in glob.glob('**/*.'+ixt,recursive=True)]
     return(filename)
 
 def preprocess(image):
@@ -85,7 +87,10 @@ def preprocess(image):
 def contour(img_precrop, im, image_name):
 
     imm = np.array(img_precrop)
-    gray = cv.cvtColor(imm, cv.COLOR_BGR2GRAY)
+    try:
+        gray = cv.cvtColor(imm, cv.COLOR_BGR2GRAY)
+    except:
+        gray=imm
     gray = cv.GaussianBlur(gray, (5, 5), 0)
     # _, bins = cv.threshold(gray,0,1,0) # inverted threshold (light obj on dark bg)
     _, bins = cv.threshold(gray, 0, 1, cv.THRESH_BINARY)
@@ -100,7 +105,7 @@ def contour(img_precrop, im, image_name):
     biggest_contour = max(contour_sizes, key=lambda x: x[0])[1]
     
     cv.drawContours(imm, biggest_contour, -1, (0,255,0), 25)
-    savename=contour_folder+'/'+image_name+'_contours.png'
+    savename=contour_folder+'/'+image_name+'_contours.'+oxt
     cv.imwrite(savename, imm)
     return(biggest_contour)
 
@@ -146,7 +151,7 @@ def crop(biggest_contour, img_precrop, image_name):
         
     if width ==0 or height==0:
         print('\nNothing to crop')
-        src=image_name+'.png'
+        src=image_name+'.'+oxt
         dest=crop_folder+'/'+src
         shutil.copyfile(src, dest)
     else:
@@ -189,7 +194,7 @@ def chunk_creator(item_list, chunksize):
 
 def main():
         
-    image_list = get_paths(PATH, 'png') #edit image file extension
+    image_list = get_paths(PATH, ixt) #edit image file extension
     
     from tqdm import tqdm
     import psutil
@@ -197,7 +202,7 @@ def main():
     # JOBS = 2
     
     with tqdm(total=len(image_list),
-             desc = 'Generating PNGs',
+             desc = 'Generating Images',
              unit='File') as pbar:
         
         filerange = len(image_list)
@@ -220,15 +225,27 @@ if __name__ == "__main__":
 
     parser = ArgumentParser()
     parser.add_argument('--PATH', help='Directory with the files to be cropped as square')
+    parser.add_argument('--ixt', help='output file format (tiff,png,jpg')
+    parser.add_argument('--oxt', help='output file format (tiff,png,jpg')
     args = parser.parse_args()  
     PATH = args.PATH
-
+    ixt = args.ixt
+    oxt = args.oxt
+    
     if PATH is None:
         root = Tk()
         root.withdraw()
         PATH = filedialog.askdirectory(parent=root,initialdir=os.getcwd(),title="Please select the folder with the files to be cropped as square")
         print('Working folder:', PATH)
-    
+    if ixt is None:
+        while ixt not in ['TIFF','tiff','PNG','png','JPG','jpg']:
+         print('Please enter TIFF or tiff, PNG or png or JPG or jpg')    
+         ixt = input('Enter input image format: ')
+         
+    if oxt is None:
+        while oxt not in ['TIFF','tiff','PNG','png','JPG','jpg']:
+            print('Please enter TIFF or tiff, PNG or png or JPG or jpg')    
+            oxt = input('Enter output image format: ')
     os.chdir(PATH)
     
     contour_folder = make_folder('contours')
