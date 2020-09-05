@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Title: Multi Image Parallel Resizer
+Title: Multi Image Parallel Mirror Flip Rotate
 @author: @author: Giacomo Nodjoumi g.nodjoumi@jacobs-unversity.de
 
-Script to resize given images to user height
+Script to mirror, flip and rotate given images
 
 Created on Tue Aug 11 18:46:42 2020
 @author: @author: Giacomo Nodjoumi g.nodjoumi@jacobs-unversity.de
