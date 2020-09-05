@@ -29,6 +29,8 @@ global image_list
 global folder
 global vtiles
 global htiles
+global ixt
+global oxt
 
 def answer(question):
     answ = None
@@ -59,10 +61,10 @@ def make_folder(name):
         print('Created new ', name,' Folder')
     return(folder)
 
-def get_paths(PATH, ext):
+def get_paths(PATH, ixt):
     import glob
     os.chdir(PATH)
-    filename = [i for i in glob.glob('**/*.'+ext,recursive=True)]
+    filename = [i for i in glob.glob('**/*.'+ixt,recursive=True)]
     return(filename)
 
 
@@ -111,10 +113,10 @@ def slicer(image, answ):
             y = int(height/ht*ih)
             h = int((height/ht))
             w = int((width/vt))
-            print(x,y,h,w)
+#            print(x,y,h,w)
             tile = img[y:y+h, x:x+w]
 
-            image_name= folder+'/'+pathlib.Path(image).name.split('.')[0]+'_H'+str(ih)+'_V'+str(iw)+'_.png'
+            image_name= folder+'/'+pathlib.Path(image).name.split('.')[0]+'_H'+str(ih)+'_V'+str(iw)+'_.'+oxt
             cv.imwrite(image_name,tile)
           
         
@@ -141,7 +143,7 @@ def main():
     # JOBS = 2
     
     with tqdm(total=len(image_list),
-             desc = 'Generating PNGs',
+             desc = 'Generating Images',
              unit='File') as pbar:
         
         filerange = len(image_list)
@@ -156,7 +158,7 @@ def main():
         
         for i in range(len(chunks)):
             files = chunks[i]
-            print('\nRendering: ', files)
+            print('\nSlicing: ', files)
             parallel_slicer(files, JOBS, ratio_answ)
             pbar.update(JOBS)
 
@@ -167,13 +169,17 @@ if __name__ == "__main__":
     parser.add_argument('--vt', help='Specify vertical tiles')
     parser.add_argument('--ht', help='Specify horizontal tiles')
     parser.add_argument('--art', help='Try to maintain 1:1 aspect ratio (Y/y or N/n')
+    parser.add_argument('--ixt', help='input file format (tiff,png,jpg')
+    parser.add_argument('--oxt', help='output file format (tiff,png,jpg')
+
     
     args = parser.parse_args()  
     PATH = args.PATH
     vtiles = args.vt
     htiles = args.ht
     ratio_answ = args.art
-
+    ixt = args.ixt
+    oxt = args.oxt
     if PATH is None:
         root = Tk()
         root.withdraw()
@@ -188,7 +194,7 @@ if __name__ == "__main__":
                 # continue
             if isinstance(vtiles, int):
                 break
-    if vtiles is None:
+    if htiles is None:
         while True:
             try:
                 htiles = int(input('Insert number of horizontal tiles: ' ))
@@ -199,7 +205,16 @@ if __name__ == "__main__":
                 break
     if ratio_answ is None:
         ratio_answ=answer('\nTry to mantain 1:1 aspect ratio? ')
-
+     
+    if ixt is None:
+     while ixt not in ['TIFF','tiff','PNG','png','JPG','jpg']:
+         print('Please enter TIFF or tiff, PNG or png or JPG or jpg')    
+         ixt = input('Enter input image format: ')
+    
+    if oxt is None:
+     while oxt not in ['TIFF','tiff','PNG','png','JPG','jpg']:
+         print('Please enter TIFF or tiff, PNG or png or JPG or jpg')    
+         oxt = input('Enter output image format: ')
     os.chdir(PATH)
 
     image_list = get_paths(PATH, 'png') #edit image file extension
