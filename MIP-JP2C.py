@@ -112,6 +112,9 @@ def JP2PNGW(file):
     with open(name+wfext, "w") as output:
         for row in params:
             output.write(str(row)+'\n')
+    with open(name+'.wkt', 'w') as cr:
+        crs=image.crs.wkt
+        cr.write(crs)
 
 
 
@@ -209,5 +212,6 @@ if __name__ == "__main__":
 
     
     main()
+
 
 

@@ -71,7 +71,7 @@ def cropper(image):
     
     from PIL import ImageOps
     img = Image.open(image)
-    size = (900,900)
+    size = (1024,1024)
     img = ImageOps.fit(img, size, Image.ANTIALIAS)
     image_name= folder+'/'+pathlib.Path(image).name.split('.')[0]+'_cropped.'+oxt
     img.save(image_name)
