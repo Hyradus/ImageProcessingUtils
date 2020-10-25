@@ -114,10 +114,10 @@ Can be user both using argument parser or interactively
 
 Valid arguments:
 
---PATH = path to folder with images
---sli = flag to select slicing
---mode = slicing method: D for dimension (e.g. height pixel value of tiles), T for tile numbers (e.g. 5, for 5 vertical tiles. horizontal tiles number will be computed automatically, trying to maintain 1:1 aspect ratio of tiles.
---t number of tiles
---dim dimension of tile height
+*--PATH = path to folder with images
+*--sli = flag to select slicing
+*--mode = slicing method: D for dimension (e.g. height pixel value of tiles), T for tile numbers (e.g. 5, for 5 vertical tiles. horizontal tiles number will be computed automatically, trying to maintain 1:1 aspect ratio of tiles.
+*--t number of tiles
+*--dim dimension of tile height
 
 The script will automatically create subfolders containing the results. 
