@@ -48,11 +48,21 @@ def make_folder(path, name):
         print('Created new ', name,' Folder')
     return(folder)
 
+# def get_paths(PATH, ixt):
+#     import glob
+#     os.chdir(PATH)
+#     filename = [i for i in glob.glob('**/*.'+ixt,recursive=True)]
+#     return(filename)
+
+
 def get_paths(PATH, ixt):
-    import glob
+    import re
+    import fnmatch
     os.chdir(PATH)
-    filename = [i for i in glob.glob('**/*.'+ixt,recursive=True)]
-    return(filename)
+    ext='*.'+ixt
+    chkCase = re.compile(fnmatch.translate(ext), re.IGNORECASE)
+    files = [f for f in os.listdir(PATH) if chkCase.match(f)]
+    return(files)
 
 
 def intInput(w):

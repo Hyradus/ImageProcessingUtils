@@ -25,7 +25,7 @@ from tkinter import Tk,filedialog
 from tqdm import tqdm
 import psutil
 
-from TileFuncs import Dim2Tile, TileCheckSave
+from TileFuncs import Dim2Tile, TileCheckSave, TileNumCheck
 from utils import question, make_folder, get_paths, intInput, chunk_creator
 
 global PATH
@@ -50,7 +50,10 @@ def slicer(image):
         if mode in ['D', 'd']:
             
             vt=Dim2Tile(dim, width)
+            vt = TileNumCheck(vt, width, dim)
             ht = Dim2Tile(dim, height)
+            ht = TileNumCheck(ht, height, dim)
+	    
         else:
             vt = tiles
             ht = tiles
@@ -66,7 +69,7 @@ def parallel_slicer(files, JOBS):
                             for i in range(len(files)))
 
 def main():
-    JOBS=psutil.cpu_count(logical=False)
+    JOBS=psutil.cpu_count(logical=True)
     
     with tqdm(total=len(image_list),
              desc = 'Generating Images',

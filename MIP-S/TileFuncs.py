@@ -10,9 +10,10 @@ Created on Mon Sep 28 11:58:29 2020
 @author: @author: Giacomo Nodjoumi g.nodjoumi@jacobs-unversity.de
 """
 from utils import Area
-
+import math
 def Dim2Tile(min_val, dimension):
-    tile = int(round(dimension/min_val,0))   
+    # tile = int(round(dimension/min_val,0))   
+    tile = math.ceil(dimension/min_val)
     return(tile)
 
 
@@ -33,11 +34,13 @@ def TileCheckSave(img, save_name, vt, ht, iw, ih):
     im = np.array(img)
     tile = im[y:y+h, x:x+w]
     area = Area(tile)
-    if area <810000:
-        print("\nImage to small, skipping...", area,' pixels')
+    if area <8192:
+        print("\nImage too small, skipping...", area,' pixels')
     else:
         cv.imwrite(save_name,tile)
 
 
-
-
+def TileNumCheck(tilenum, dimension, size):
+    if dimension//tilenum < size:
+        tilenum = tilenum -1
+    return(tilenum)
