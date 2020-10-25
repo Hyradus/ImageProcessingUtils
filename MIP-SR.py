@@ -71,7 +71,7 @@ def cropper(image):
     
     from PIL import ImageOps
     img = Image.open(image)
-    size = (1024,1024)
+    size = (512,512)
     img = ImageOps.fit(img, size, Image.ANTIALIAS)
     image_name= folder+'/'+pathlib.Path(image).name.split('.')[0]+'_cropped.'+oxt
     img.save(image_name)
@@ -182,7 +182,7 @@ if __name__ == "__main__":
         PATH = filedialog.askdirectory(parent=root,initialdir=os.getcwd(),title="Please select the folder with the files to be resized")
         print('Working folder:', PATH)
     if res is None:
-        res = answer('Resize all images to 900x900? ')  
+        res = answer('Resize all images to 512x512? ')  
     
     if ixt is None:
      while ixt not in ['TIFF','tiff','PNG','png','JPG','jpg']:

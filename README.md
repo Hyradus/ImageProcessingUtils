@@ -25,7 +25,7 @@ Valid arguments:
 --ixt= input file format
 --oxt= output file format
 
-The script will automatically create subfolders containing the results. BE SURE TO REMOVE THOSE FOLDER BEFORE RUNNING THE SCRIPT AGAIN IN THE SAME MAIN PATH
+The script will automatically create subfolders containing the results. 
 
 _____________________________________________________________________________
 # MIP-BC - Multi Image Parallel Background Cropper
@@ -103,7 +103,7 @@ Valid arguments:
 The script will automatically create subfolders containing the results. BE SURE TO REMOVE THOSE FOLDER BEFORE RUNNING THE SCRIPT AGAIN IN THE SAME MAIN PATH
 
 _____________________________________________________________________________
-# MIP-JP2C - Multi Image Paraller JP2 Converter
+# MIP-JP2CS - Multi Image Paraller JP2 Converter and Slicer
 This script use rasterio to load JP2 images and opencv convert into tiff/png/jpg of a given resolution, saving also a world reference file.
 
 Compatible with Tiff, PNG, JPG
@@ -115,8 +115,9 @@ Can be user both using argument parser or interactively
 Valid arguments:
 
 --PATH = path to folder with images
---vres
---ixt= input file format
---oxt= output file format
+--sli = flag to select slicing
+--mode = slicing method: D for dimension (e.g. height pixel value of tiles), T for tile numbers (e.g. 5, for 5 vertical tiles. horizontal tiles number will be computed automatically, trying to maintain 1:1 aspect ratio of tiles.
+--t number of tiles
+--dim dimension of tile height
 
-The script will automatically create subfolders containing the results. BE SURE TO REMOVE THOSE FOLDER BEFORE RUNNING THE SCRIPT AGAIN IN THE SAME MAIN PATH
+The script will automatically create subfolders containing the results. 
