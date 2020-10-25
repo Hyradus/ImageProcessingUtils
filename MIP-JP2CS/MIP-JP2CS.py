@@ -58,15 +58,15 @@ def slicer(image, width, height, image_name, mode, dim):
             save_name = folder+'/'+image_name+'_H'+str(ih)+'_V'+str(iw)+'.'+ext
             
             
-            x = math.floor(width//vt*iw)
+            x = math.floor(width/vt*iw)
       
             y = math.floor(height/ht*ih)
             h = math.floor(height/ht)
-            # w = math.floor(width/vt)
+            w = math.floor(width/vt)
             if dim is None:
                 dim = math.floor(height/ht)
 
-            win = Window(x,y,h,dim)
+            win = Window(x,y,w,h)
   
             tile_transform = image.window_transform(win)
             img = image.read(1, window=win)

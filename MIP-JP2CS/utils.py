@@ -27,7 +27,7 @@ def question(question, answers):
     return(answ)
 
 def make_folder(path, name):
-    #os.getcwd()
+    # os.()
     folder = path+'/'+name
     if os.path.exists(folder):
            qst = name + ' Folder exist, remove it? '
@@ -37,8 +37,14 @@ def make_folder(path, name):
                os.mkdir(folder)
                print(name, 'Folder created')
            else:
+               # now = datetime.now()
+               # oldfolder = name +'_backup_' + now.strftime("%d%m%Y_%H%M%S")
+               # shutil.move(folder, oldfolder)
+               # print(folder, ' Folder not exist, creating.')
+               # os.mkdir(folder)
+               # print('Created new ', name,' Folder')
                now = datetime.now()
-               folder = name +'_' + now.strftime("%d-%m-%Y_%H-%M-%S")
+               folder = path+'/'+name +'_' + now.strftime("%d%m%Y_%H%M%S")
                print(folder, ' Folder not exist, creating.')
                os.mkdir(folder)
                print('Created new ', name,' Folder')
