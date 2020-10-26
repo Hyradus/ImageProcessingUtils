@@ -142,7 +142,7 @@ def main():
     if dim is None:
         JOBS=psutil.cpu_count(logical=False)        
     elif avram > 30 and dim <=8192:
-        JOBS=psutil.cpu_count(logical=True)
+        JOBS=psutil.cpu_count(logical=False)
     elif avram >30 and dim>8192:
         JOBS=psutil.cpu_count(logical=False)
     elif avram <30 and dim <=8192:
