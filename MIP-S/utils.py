@@ -38,7 +38,7 @@ def make_folder(path, name):
                print(name, 'Folder created')
            else:
                now = datetime.now()
-               folder = name +'_' + now.strftime("%d-%m-%Y_%H-%M-%S")
+               folder = path+'/'+name +'_' + now.strftime("%d%m%Y_%H%M%S")
                print(folder, ' Folder not exist, creating.')
                os.mkdir(folder)
                print('Created new ', name,' Folder')

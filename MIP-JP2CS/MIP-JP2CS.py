@@ -109,7 +109,7 @@ def JP2PNGW(file):
         
     
         
-        save_name=folder+'/'+image_name
+        save_name=folder+'/'+image_name+'.'+ext
 
         if ext == 'tiff':
             GTiffWriter(save_name, img, image.crs, transform)
