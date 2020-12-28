@@ -9,7 +9,7 @@ Title:
 Created on Mon Sep 28 11:58:29 2020
 @author: @author: Giacomo Nodjoumi g.nodjoumi@jacobs-unversity.de
 """
-from utils import Area
+from ImgUtils import Area
 
 def Dim2Tile(min_val, dimension):
     tile = int(round(dimension/min_val,0))   

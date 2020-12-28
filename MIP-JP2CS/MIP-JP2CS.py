@@ -25,8 +25,8 @@ import rasterio as rio
 import cv2 as cv
 
 from TileFuncs import Dim2Tile, TileNumCheck
-from utils import question, make_folder, get_paths, intInput, chunk_creator
-from ImgUtils import GTiffWriter
+from GenUtils import question, make_folder, get_paths, intInput, chunk_creator
+from ImgUtils import ImgWriter
 global PATH
 global dim
 global ext
@@ -72,7 +72,7 @@ def slicer(image, width, height, image_name, mode, dim):
             img = image.read(1, window=win)
             img = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
             # img = cv.convertScaleAbs(img, alpha=(255.0/img.max()))
-            GTiffWriter(save_name, img, image.crs, tile_transform)
+            ImgWriter(save_name, img, image.crs, tile_transform, ext)
             
 
 def JP2PNGW(file):
@@ -101,8 +101,8 @@ def JP2PNGW(file):
                     (image.width / img.shape[-1]),
                     (image.height / img.shape[-2]))
     
-        t = transform
-        params = [t.a,t.b,t.d,t.e,t.c,t.f]
+        # t = transform
+        # params = [t.a,t.b,t.d,t.e,t.c,t.f]
         
         
         img = cv.convertScaleAbs(img, alpha=(255.0/img.max()))[0]
@@ -111,21 +111,8 @@ def JP2PNGW(file):
         
         save_name=folder+'/'+image_name+'.'+ext
 
-        if ext == 'tiff':
-            GTiffWriter(save_name, img, image.crs, transform)
-            wfext='.tfw'
-        elif ext == 'png':
-            cv.imwrite(save_name+'.'+ext,img)
-            wfext='.pgw'
-        elif ext == 'jpg':
-            cv.imwrite(save_name+'.'+ext,img)
-            wfext='.jgw'
-        with open(save_name+wfext, "w") as output:
-            for row in params:
-                output.write(str(row)+'\n')
-        with open(save_name+'.wkt', 'w') as cr:
-            crs=image.crs.wkt
-            cr.write(crs)
+        ImgWriter(save_name, img, image.crs, transform, ext)
+
 
 
 def parallel_JP2PNG(files, JOBS):
@@ -151,7 +138,7 @@ def main():
         JOBS=2
         
     print('\nToral ram: ', avram, ' , using: ', JOBS, ' cpus')
-    rasters = get_paths(PATH, 'JP2')
+    rasters = get_paths(PATH, 'jp2')
     
     with tqdm(total=len(rasters),
              desc = 'Generating images and world files',
