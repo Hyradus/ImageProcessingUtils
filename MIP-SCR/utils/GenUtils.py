@@ -61,12 +61,26 @@ def get_paths(PATH, ixt):
     files = [f for f in os.listdir(PATH) if chkCase.match(f)]
     return(files)
 
+def folder_file_size(path, image_list):
+    from statistics import mean
+    sizes =[]
+    gb = 1024*1024*1024
+    mb=1024*1024
+    for path, dirs, files in os.walk(path):
+        for f in files:
+            fp = os.path.join(path, f)
+            #sizes += os.path.getsize(fp)
+            sizes.append((os.path.getsize(fp))/gb)
+    max_size = max(sizes)
+    av_fsize=mean(sizes)
+    total_size = sum(sizes)
+    return (total_size, max_size, av_fsize)
+
 def intInput(w):
     while True:
-        try:
-            ask='Insert '+w+': '
-            intInpt = int(input(ask))
-        except:
+        ask='Insert '+w+': '
+        intInpt = int(input(ask))
+        if type(intInpt) != int:
             print('Please insert only one integer')
             # continue
         if isinstance(intInpt, int):
@@ -90,3 +104,45 @@ def get_types(folder):
         types.append(f.split('.')[1])
     uni_vals = set(types)
     return(uni_vals)
+
+def askFile(f):
+    ask = 'Insert path to '+ f
+    while True:
+        file = str(input(ask))
+        if os.path.isfile(file) == True:
+            print(file, 'is valid')
+            break
+        else:
+            print(file, 'is not a valid path')
+    return(file)
+            
+def askPath(p):
+    ask = 'Insert path to ' + p
+    while True:
+        path = str(input(ask))
+        if os.path.isdir(path) == True:
+            print(path, 'is valid')
+            break
+        else:
+            print(path,'is not a valid path')
+    return(path)
+
+def askInt(p):
+    ask = 'Insert integer for '+ p
+    while True:
+        try:
+            integ = int(input(ask))
+            break
+        except Exception as e:
+            print(e)
+    return(integ)
+
+def askFloat(p):
+    ask = 'Insert float for ' + p
+    while True:
+        try:
+            flt = float(input(ask))
+            break
+        except Exception as e:
+            print(e)
+    return(flt)
