@@ -35,7 +35,7 @@ def make_folder(path, name):
                print(name, 'Folder created')
            else:
                now = datetime.now()
-               folder = name +'_' + now.strftime("%d-%m-%Y_%H-%M-%S")
+               folder = path+'/'+name +'_' + now.strftime("%d-%m-%Y_%H-%M-%S")
                print(folder, ' Folder not exist, creating.')
                os.mkdir(folder)
                print('Created new ', name,' Folder')
@@ -55,10 +55,10 @@ def make_folder(path, name):
 def get_paths(PATH, ixt):
     import re
     import fnmatch
-    os.chdir(PATH)
+    # os.chdir(PATH)
     ext='*.'+ixt
     chkCase = re.compile(fnmatch.translate(ext), re.IGNORECASE)
-    files = [f for f in os.listdir(PATH) if chkCase.match(f)]
+    files = [PATH+'/'+f for f in os.listdir(PATH) if chkCase.match(f)]
     return(files)
 
 def folder_file_size(path, image_list):
