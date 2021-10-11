@@ -99,7 +99,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt):
                                       height = tile_height)
                     tile_trs = src_image.window_transform(tile_src_win)
                 except Exception as e:
-                    print(e, 'skip', sname)
+                    # print(e, 'skip', sname)
                     pass
                 
             if sqcrp in ['Y','y']:
@@ -111,8 +111,8 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt):
                                                                           tile_src_win,
                                                                           savename)
                 except Exception as e:
-                    print(e)
-                    # pass
+                    # print(e)
+                    pass
             if res in ['Y', 'y']:
                 try:
                     tile_height, tile_width, tile_trs, savename = CellSizeScale(src_image,
@@ -122,7 +122,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt):
                                                                              tile_trs,
                                                                              savename)
                 except Exception as e:
-                    print(e)
+                    # print(e)
                     pass
     
             try:
@@ -150,7 +150,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt):
                                   crs=crs) as dst:
                             dst.write(img)
             except Exception as e:
-                print(e)
+                # print(e)
                 break
         
     

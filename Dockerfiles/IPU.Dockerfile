@@ -60,10 +60,8 @@ ARG GID=100
 ARG PASSWORD=123456
 RUN useradd -m -d /home/user -u $UID -g $GID -s /bin/bash user 		\
     && su - user -c 'ln -s /mnt/data /home/user/data' 				\
-    #&& su - user -c 'ln -s /ImageProcessingUtils/MIP-SCR /home/user/MIP-SCR' \
-    #&& su - user -c 'ln -s /Tools /home/user/Tools' \
     && echo "user:$PASSWORD" | chpasswd
 
-ADD ../Tools /home/user/Tools
+ADD Tools /home/user/Tools
 WORKDIR /home/user/
 USER user
