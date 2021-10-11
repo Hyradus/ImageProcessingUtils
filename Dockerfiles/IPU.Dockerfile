@@ -63,5 +63,6 @@ RUN useradd -m -d /home/user -u $UID -g $GID -s /bin/bash user 		\
     && echo "user:$PASSWORD" | chpasswd
 
 ADD Tools /home/user/Tools
+RUN chmod +x /home/user/Tools/jupyter.sh
 WORKDIR /home/user/
 USER user

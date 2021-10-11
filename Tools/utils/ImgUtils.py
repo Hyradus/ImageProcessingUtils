@@ -89,7 +89,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt):
                 try:
                     tile_width, tile_height, temp_win, tile_trs, savename =  borderCropper(src_image,
                                                                                         tile_src_win,
-                                                                                        savename)
+                                                                                        savename, oxt)
                     tile_col_off = tile_src_win.col_off + temp_win.col_off
                     tile_row_off = tile_src_win.row_off + temp_win.row_off
                     tile_width = temp_win.width
@@ -109,7 +109,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt):
                                                                           tile_width,
                                                                           tile_height,
                                                                           tile_src_win,
-                                                                          savename)
+                                                                          savename, oxt)
                 except Exception as e:
                     # print(e)
                     pass
@@ -120,7 +120,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt):
                                                                              tile_width,
                                                                              float(cell_size),
                                                                              tile_trs,
-                                                                             savename)
+                                                                             savename, oxt)
                 except Exception as e:
                     # print(e)
                     pass
@@ -155,7 +155,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt):
         
     
 
-def borderCropper(src, source_win,savename):
+def borderCropper(src, source_win,savename, oxt):
     pre_crop, crd = CvContourCrop(np.array(reshape_as_image(src.read(window=source_win)).astype(np.uint8)))
     bx =  maxRectContourCrop(pre_crop)
     del pre_crop
@@ -168,7 +168,7 @@ def borderCropper(src, source_win,savename):
     dst_trs = src.window_transform(src_win)
     src_width = bc_win.width
     src_height = bc_win.height
-    savename = savename.split('.')[0]+'_cropped'
+    savename = savename.split('.'+oxt)[0]+'_cropped'
     return(src_width, src_height, src_win, dst_trs, savename)
 
 
@@ -234,7 +234,7 @@ def coordFinder(contours, gray):
             i = i + 1
     return(coords)
            
-def square_crop(src, src_width, src_height, src_win, savename):
+def square_crop(src, src_width, src_height, src_win, savename, oxt):
     center_x = src_width//2
     center_y = src_height//2    
     diff = abs(src_width-src_height)
@@ -256,10 +256,10 @@ def square_crop(src, src_width, src_height, src_win, savename):
     dst_trs = src.window_transform(crp_win)
     src_width = src_win.width
     src_height = src_win.height
-    savename = savename.split('.')[0]+'_centered'
+    savename = savename.split('.'+oxt)[0]+'_centered'
     return(src_width, src_height, src_win, dst_trs, savename)
 
-def CellSizeScale(src, src_height, src_width, cell_size, dst_trs, savename):
+def CellSizeScale(src, src_height, src_width, cell_size, dst_trs, savename, oxt):
     cell_sizeX = abs(src.transform[0])
     cell_sizeY = abs(src.transform[4])
     dst_cell_sizeX = cell_size
