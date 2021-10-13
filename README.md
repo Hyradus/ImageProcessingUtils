@@ -2,7 +2,10 @@
 [![DOI](https://zenodo.org/badge/287286230.svg)](https://zenodo.org/badge/latestdoi/287286230)
 
 Author: g.nodjoumi@jacobs-university.de
+
 This repo contain image processing utilities that i used for prepare images before Deep Learning training
+
+This study is within the Europlanet 2024 RI and EXPLORE project, and it has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 871149 and No 101004214.
 
 _____________________________________________________________________________
 
