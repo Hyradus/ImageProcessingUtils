@@ -34,7 +34,7 @@ global oxt
 global dst_folder
 import pandas as pd
 global proc_df
-#import numpy as np/media/hyradus/I-DATS/Working/test-mcr
+#import numpy as np
 
 def cropper(image, bc, sqcrp, res, cell_size, lim, limit_size):
     image_name = os.path.basename(image).split('.')[0]#+ixt
@@ -60,13 +60,13 @@ def cropper(image, bc, sqcrp, res, cell_size, lim, limit_size):
                 if src_width > int(limit_size) or src_height >int(limit_size):
                     # src_crs = src.crs
                     max_dim = int(limit_size)
-                geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt)
+                    geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt)
 
             else:
                 
                 if bc in ['y','y']:
                     try:
-                        src_width, src_height, src_win, dst_trs, savename =  borderCropper(src, src_win, savename)
+                        src_width, src_height, src_win, dst_trs, savename =  borderCropper(src, src_win, savename,oxt)
                     except Exception as e:
                         print(e)
                         pass
@@ -80,7 +80,7 @@ def cropper(image, bc, sqcrp, res, cell_size, lim, limit_size):
                                                                               src_win,
                                                                               # xoff,
                                                                               # yoff,
-                                                                              savename)
+                                                                              savename,oxt)
                     except Exception as e:
                         print(e)
                         pass
@@ -95,7 +95,7 @@ def cropper(image, bc, sqcrp, res, cell_size, lim, limit_size):
                                                                                  src_width,
                                                                                  float(cell_size),
                                                                                  dst_trs,
-                                                                                 savename)
+                                                                                 savename,oxt)
                     except Exception as e:
                         print(e)
                         pass
@@ -211,7 +211,7 @@ def main():
 if __name__ == "__main__":
 
     parser = ArgumentParser()
-    parser.add_argument('--src', help='Directory with the files to be cropped as square')
+    parser.add_argument('--PATH', help='Directory with the files to be cropped as square')
     parser.add_argument('--dst', help='Destination folder, if empty PATH is used')
     parser.add_argument('--ixt', help='output file format (tiff,png,jpg')
     parser.add_argument('--oxt', help='output file format (tiff,png,jpg')
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     parser.add_argument('--lim', help='Specify limit size for images? Y/y or N/n')
     parser.add_argument('--px', help='Limit size in pixel')
     args = parser.parse_args()  
-    PATH = args.src
+    PATH = args.PATH
     dst_folder = args.dst
     ixt = args.ixt
     oxt = args.oxt
@@ -235,22 +235,17 @@ if __name__ == "__main__":
     # fold_name = 'Processed'
     
     if PATH is None:
-        try:
-            root = Tk()
-            root.withdraw()
-            PATH = filedialog.askdirectory(parent=root,initialdir=os.getcwd(),title="Please select the folder with the files to be cropped as square")
-            print('Working folder:', PATH)
-        except:
-            print('Please provide --src argument')
+        root = Tk()
+        root.withdraw()
+        PATH = filedialog.askdirectory(parent=root,initialdir=os.getcwd(),title="Please select the folder with the files to be cropped as square")
+        print('Working folder:', PATH)
+        
     if dst_folder is None:
-        try:
-            root = Tk()
-            root.withdraw()
-            dst_folder = filedialog.askdirectory(parent=root,initialdir=os.getcwd(),title="Select output folder")
-            print('Output folder:', dst_folder)
-        except:
-            print('Please provide --dst argument')
-            
+        root = Tk()
+        root.withdraw()
+        dst_folder = filedialog.askdirectory(parent=root,initialdir=os.getcwd(),title="Select output folder")
+        print('Output folder:', dst_folder)
+        
     if ixt is None:
         while ixt not in ['TIFF','tiff','PNG','png','JPG','jpg','JP2','jp2']:
          print('Please enter TIFF or tiff, PNG or png or JPG or jpg')    
@@ -326,7 +321,6 @@ if __name__ == "__main__":
         if dst_folder == None:
             dst_folder = PATH+'/'+fold_name
         else:
-            
             dst_folder = dst_folder+'/'+fold_name
         os.makedirs(dst_folder, exist_ok=True)
         print(bc)
