@@ -66,7 +66,7 @@ def cropper(image, bc, sqcrp, res, cell_size, lim, limit_size):
                 
                 if bc in ['y','y']:
                     try:
-                        src_width, src_height, src_win, dst_trs, savename =  borderCropper(src, src_win, savename)
+                        src_width, src_height, src_win, dst_trs, savename =  borderCropper(src, src_win, savename,oxt)
                     except Exception as e:
                         print(e)
                         pass
@@ -80,7 +80,7 @@ def cropper(image, bc, sqcrp, res, cell_size, lim, limit_size):
                                                                               src_win,
                                                                               # xoff,
                                                                               # yoff,
-                                                                              savename)
+                                                                              savename,oxt)
                     except Exception as e:
                         print(e)
                         pass
@@ -95,7 +95,7 @@ def cropper(image, bc, sqcrp, res, cell_size, lim, limit_size):
                                                                                  src_width,
                                                                                  float(cell_size),
                                                                                  dst_trs,
-                                                                                 savename)
+                                                                                 savename,oxt)
                     except Exception as e:
                         print(e)
                         pass
