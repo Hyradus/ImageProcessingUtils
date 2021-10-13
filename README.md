@@ -1,7 +1,7 @@
 # ImageProcessingUtils
 [![DOI](https://zenodo.org/badge/287286230.svg)](https://zenodo.org/badge/latestdoi/287286230)
 
-Author: g.nodjoumi@jacobs-university.de
+Author: giacomo.nodjoumi@hyranet.info - g.nodjoumi@jacobs-university.de
 
 This repo contain image processing utilities that i used for prepare images before Deep Learning training
 
