@@ -76,8 +76,8 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt):
             savename = tiles_dict['Names'][i]
             tile_src_win = tiles_dict['Windows'][i]
             tile_trs = tiles_dict['Transforms'][i]
-            xoff = tile_win.col_off
-            yoff = tile_win.row_off
+            # xoff = tile_win.col_off
+            # yoff = tile_win.row_off
             tile_height = tile_src_win.height
             tile_width = tile_src_win.width
             # tile = img[:,yy:yy+hh, xx:xx+ww]

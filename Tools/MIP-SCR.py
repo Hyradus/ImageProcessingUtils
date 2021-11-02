@@ -34,6 +34,7 @@ global oxt
 global dst_folder
 import pandas as pd
 global proc_df
+import shutil
 #import numpy as np
 
 def cropper(image, bc, sqcrp, res, cell_size, lim, limit_size):
@@ -61,6 +62,14 @@ def cropper(image, bc, sqcrp, res, cell_size, lim, limit_size):
                     # src_crs = src.crs
                     max_dim = int(limit_size)
                     geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt)
+                else:
+                    # if src_width >= src_height:/media/hyradus/I-DATS/Working/DeepLandforms_Images/HiRISE
+                    #     max_dim = int(src_width)
+                    # else:
+                    #     max_dim =int(src_height)
+                    dst_file = savename+'.'+oxt
+                    shutil.copy(image, dst_file)
+                # geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt)
 
             else:
                 
@@ -125,8 +134,8 @@ def cropper(image, bc, sqcrp, res, cell_size, lim, limit_size):
                 except Exception as e:
                     print(e)
                 
-                tmp_df = pd.DataFrame.from_dict([data_dict])                    
-                return tmp_df
+            tmp_df = pd.DataFrame.from_dict([data_dict])                    
+            return tmp_df
     except Exception as e:
         print(e)
         pass
