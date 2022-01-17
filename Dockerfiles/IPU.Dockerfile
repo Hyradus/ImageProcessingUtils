@@ -62,8 +62,8 @@ RUN useradd -m -d /home/user -u $UID -g $GID -s /bin/bash user 		\
     && su - user -c 'ln -s /mnt/data /home/user/data' 				\
     && echo "user:$PASSWORD" | chpasswd
 
-ADD Tools /home/user/Tools
-RUN chown user -R /home/user/Tools && \
-    chmod +x /home/user/Tools/jupyter.sh
+ADD IPU /home/user/IPU
+RUN chown user -R /home/user/IPU && \
+    chmod +x /home/user/IPU/jupyter.sh
 WORKDIR /home/user/
 USER user
