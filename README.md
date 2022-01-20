@@ -9,7 +9,6 @@ This study is within the Europlanet 2024 RI and EXPLORE project, and it has rece
 
 _____________________________________________________________________________
 
-# ImageProcessingUtils
 ### formerly MIP-SCR - Multi Image Parallel Square Crop Resize
 This script do:
 
