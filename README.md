@@ -9,14 +9,15 @@ This study is within the Europlanet 2024 RI and EXPLORE project, and it has rece
 
 _____________________________________________________________________________
 
-# MIP-SCR - Multi Image Parallel Square Crop Resize
+# ImageProcessingUtils
+### formerly MIP-SCR - Multi Image Parallel Square Crop Resize
 This script do:
 
 - Crop images to 1:1 aspect ratio from the center of the image
 - Remove black borders from image
 - Resize cell-size of image to user-defined size
 - Create tiles if images are above a user-defined limit
-- Convert from JP2 format to Geotiff
+- Convert from JP2 format to Geotiff, jpg/png + world file
 
 ## Usage
 These tools can be used in a conda environment or in docker container.
@@ -29,4 +30,4 @@ For Conda environment, just install the required packages, activate the env, oth
 - Run the notebook and change the config dictionary or just run and pass configs interactively
 If using CLI execute the script passing at least --PATH argument
 
-The script will automatically create subfolders containing the results. 
+The script will automatically create subfolders containing the results.
