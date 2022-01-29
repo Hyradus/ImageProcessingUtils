@@ -29,19 +29,26 @@ RUN apt update && apt install --no-install-recommends -y 	\
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 --no-cache-dir install 	\
-	  setuptools 						        \
-    fiona                         \
-    geopandas                     \
     git+https://${GITHUB_TOKEN}@github.com/Hyradus/maxrect.git \
-    joblib                        \
-    numpy 							          \
-  	opencv-python					        \
-  	#opencv-contrib-python			  \
-  	psutil           							\
-  	rasterio				           		\
-  	scikit-image					        \
-  	tqdm							            #\
-    #&& rm -rf /var/lib/apt/lists/*
+
+    && rm -rf /var/lib/apt/lists/* \
+    && mamba install -c conda-forge \
+                          fiona \
+                          joblib \
+                          geopandas \
+                          geoplot \
+                          kalasiris \
+                          matplotlib \
+                          numpy \
+                          opencv \
+                          psutil \
+                          pygeos \
+                          rasterio \
+                          scikit-image \
+                          scipy \
+                          shapely \
+                          spectral \
+                          tqdm
 
 FROM base AS ipu
 ADD $PWD/Dockerfiles/IPU /home/jovyan/IPU
