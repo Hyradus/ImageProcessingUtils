@@ -16,21 +16,17 @@ import cv2 as cv
 # from PIL import Image
 # Image.MAX_IMAGE_PIXELS = None
 import rasterio as rio
-from rasterio.plot import reshape_as_raster#, reshape_as_image
+from rasterio.plot import reshape_as_raster, reshape_as_image
 from rasterio.windows import Window
 from rasterio.enums import Resampling
 from utils.TileFuncs import Dim2Tile, TileNumCheck
-from rasterio.plot import reshape_as_image#, reshape_as_raster
 import gc
 from rasterio.windows import Window
 import math
 from osgeo import gdal
 from osgeo.gdal import gdalconst
-# def geoslicer(src, dst_width, trs, dst_height, src_crs, max_dim, savename, oxt, bc):
 
-def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog_cfg):
-    # from datetime import datetime as dt
-    # start = dt.now()
+def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog_cfg):
     src_image = rio.open(image)
     try:
         cnt, src_height, src_width = src_image.shape
@@ -65,8 +61,6 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog_cfg)
             tile_win = Window(x,y,w,h)
             windows.append(tile_win)
             dst_trs = src_image.window_transform(tile_win)
-            # t= rio.windows.transform(win, src_trs)
-            # t = src.window_transform(win)
             transforms.append(dst_trs)
 
     tiles_dict = {'Names':names,
@@ -82,10 +76,6 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog_cfg)
             yoff = tile_win.row_off
             tile_height = tile_src_win.height
             tile_width = tile_src_win.width
-            # tile = img[:,yy:yy+hh, xx:xx+ww]
-            # tile = reshape_as_image(tile)
-            # tile = cv.normalize(tile, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
-            # maxval = tile.max()
 
             if bc in ['y','y']:
                 try:
@@ -101,7 +91,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog_cfg)
                                       height = tile_height)
                     tile_trs = src_image.window_transform(tile_src_win)
                 except Exception as e:
-                    # print(e, 'skip', sname)
+                    print(e, 'skip', sname)
                     pass
 
             if sqcrp in ['Y','y']:
@@ -113,7 +103,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog_cfg)
                                                                           tile_src_win,
                                                                           savename, oxt)
                 except Exception as e:
-                    # print(e)
+                    print(e)
                     pass
             if res in ['Y', 'y']:
                 try:
@@ -124,43 +114,64 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog_cfg)
                                                                              tile_trs,
                                                                              savename, oxt)
                 except Exception as e:
-                    # print(e)
+                    print(e)
                     pass
 
             try:
-                img = src.read(window=src_win,
+                img = src_image.read(window=tile_src_win,
                                out_shape=(cnt, src_height, src_width),
                                resampling=Resampling.cubic)
-                #img = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
-                #maxval = img.max()
-
-                #if maxval != 0:
-                #    if maxval == 255:
-                #        alpha = 255
-                #    else:
-                #        alpha = (255.0/maxval)
                 if img.dtype == 'uint8':
                     img = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+                    #alpha = (255.0/maxval)
                     #img = cv.convertScaleAbs(img, alpha=alpha)
-                savename = savename+'.'+oxt
-                # print(savename)
-                with rio.open(savename,'w',
-                          driver='GTiff',
-                          window=src_win,
-                          width=src_width,
-                          height=src_height,
-                          count=cnt,
-                          nodata=src.nodata,
-                          dtype=img.dtype,
-                          transform=dst_trs,
-                          crs=crs) as dst:
-                    dst.write(img)
-                if cog in ['Yes','yes','Y','y']:
-                    cogCreator(savename, cog_cfg)
+                if tile_width*tile_height > 10000:
+                    maxval = img.max()
+                    if maxval != 0:
+                        #print(savename)
+                        noData = src_image.nodata
+                        with rio.open(savename,'w',
+                                  driver='GTiff',
+                                  window=tile_src_win,
+                                  width=tile_width,
+                                  height=tile_height,
+                                  count=cnt,
+                                  nodata=src_image.nodata,
+                                  dtype=img.dtype,
+                                  transform=tile_trs,
+                                  crs=crs) as dst:
+                            dst.write(img)
+                        #print('done')
+                        if cog in ['Yes','yes','Y','y']:
+                            try:
+                                print(cog)
+                                stats = [img[img>src_image.nodata].min(), img[img>src_image.nodata].max(), 1, 255]
+                                if img.dtype=='float32':
+                                    cog_cfg['COMPRESS']='LZW'
+                                    noData=0
+                                cogCreator(savename, cog_cfg, noData, stats)
+                            except Exception as e:
+                                print('error', e)
+
             except Exception as e:
-                # print(e)
+                print(e)
                 break
 
+
+
+
+def cogCreator(savename, cog_cfg, nodata, stats):
+    dst_cog = savename.split('.tiff')[0]+'-cog.tiff'
+    cfg = []
+    for key, values in cog_cfg.items():
+        if key == 'levels':
+            cfg.append(values)
+        else:
+            cfg.append(key+'='+values)
+    final_cog= gdal.Translate(dst_cog, savename, creationOptions=cfg[0:-1], scaleParams=[stats], outputType=gdalconst.GDT_Byte, noData=nodata)
+    final_cog.BuildOverviews('average', cfg[-1])
+    final_cog = None
+    os.remove(savename)
 
 
 def borderCropper(src, source_win,savename, oxt):
@@ -207,12 +218,7 @@ def CvContourCrop(source):
         img_crop = source[y:y+h, x:x+w]
     return(img_crop, crd)
 
-def cogCreator(savename, cog_cfg):
-    dst_cog = savename.split('.tiff')[0]+'-cog.tiff'
-    final_cog= gdal.Translate(dst_cog, savename, creationOptions=cog_cfg[0], scaleParams=[[]], outputType=gdalconst.GDT_Byte, noData=255)
-    final_cog.BuildOverviews('average', cog_cfg[1])
-    final_cog = None
-    os.remove(img)
+
 
 def maxRectContourCrop(img_crop):
     _, bins = cv.threshold(img_crop, 1, 255, cv.THRESH_BINARY)
@@ -352,3 +358,11 @@ def imgEnh(image, name):
             img_norm.append(cv.normalize(im, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX))
         img_merge=(img_norm[0]+img_norm[1])*2
         cv.imwrite('Merged2.png',img_merge)
+ #img = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+                #maxval = img.max()
+
+                #if maxval != 0:
+                #    if maxval == 255:
+                #        alpha = 255
+                #    else:
+                #        alpha = (255.0/maxval)
