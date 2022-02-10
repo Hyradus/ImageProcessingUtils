@@ -105,17 +105,21 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                 except Exception as e:
                     print(e)
                     pass
-            if res in ['Y', 'y']:
-                try:
-                    tile_height, tile_width, tile_trs, savename = CellSizeScale(src_image,
-                                                                             tile_height,
-                                                                             tile_width,
-                                                                             float(cell_size),
-                                                                             tile_trs,
-                                                                             savename, oxt)
-                except Exception as e:
-                    print(e)
-                    pass
+                if res in ['Y', 'y']:
+                    if cell_size >= src.transform[0]:
+                        try:
+                            src_height, src_width, dst_trs, savename = CellSizeScale(src,
+                                                                                     src_height,
+                                                                                     src_width,
+                                                                                     float(cell_size),
+                                                                                     dst_trs,
+                                                                                     savename,
+                                                                                     oxt)
+                        except Exception as e:
+                            print(e)
+                            pass
+                    else:
+                        print('Skipping resize, selected cell size is lower than source cell size')
 
             try:
                 img = src_image.read(window=tile_src_win,
@@ -292,7 +296,7 @@ def CellSizeScale(src, src_height, src_width, cell_size, dst_trs, savename, oxt)
             (src_height/dst_height))
     src_width = copy(dst_width)
     src_height = copy(dst_height)
-    savename = savename+'_resized_'+str(cell_size)+'m'
+    savename = savename+'_resized_'+str(cell_size).replace('.','-')+'m'
     return(src_height, src_width, dst_trs, savename)
 
 def GTiffImageResizer(image, dim):

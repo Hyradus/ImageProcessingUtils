@@ -3,30 +3,80 @@
 
 Author: giacomo.nodjoumi@hyranet.info - g.nodjoumi@jacobs-university.de
 
-This repo contain image processing utilities that i used for prepare images before Deep Learning training
+ImageProcessingUtils is a Jupyter Notebook for processing georeferenced images such as GeoTiff, JP2, png/jpeg+world file, CUB (USGS ISIS).
+With this tool is possible to perform single to multiple tasks including:
+
+* convert to GeoTiff, Cloud Optimize GeoTiff (COG), JP2, png/jpeg+world file, CUB (USGS ISIS)
+* rescale images pixel resolution
+* create tiles for images larger than user-defined size limit
+* remove black borders for images/tiles
+* crop images/tiles with a 1:1 centered aspect ration
+
+The notebook se served throug a docker image containing all required packages.
 
 This study is within the Europlanet 2024 RI and EXPLORE project, and it has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 871149 and No 101004214.
 
 _____________________________________________________________________________
 
-### formerly MIP-SCR - Multi Image Parallel Square Crop Resize
-This script do:
+## Requirements
 
-- Crop images to 1:1 aspect ratio from the center of the image
-- Remove black borders from image
-- Resize cell-size of image to user-defined size
-- Create tiles if images are above a user-defined limit
-- Convert from JP2 format to Geotiff, jpg/png + world file
+Docker
+Linux OS (dockerfile should work also on Windows and MacOS)
+
+## Installation
+
+To build the image in Linux environment run:
+```
+sudo chmod +x ImageBuilder.sh
+./ImageBuilder.sh
+```
 
 ## Usage
-These tools can be used in a conda environment or in docker container.
-For Conda environment, just install the required packages, activate the env, otherwise build the container using the provided Dockerfile. In both cases do as follows:
-** Command Line Interface **
-- Create provided environment or install required packages
-- Just execute the script and interactively insert all parameters.
-** Jupyter Notebook **
-- Create provided environment or install required packages
-- Run the notebook and change the config dictionary or just run and pass configs interactively
-If using CLI execute the script passing at least --PATH argument
 
-The script will automatically create subfolders containing the results.
+```
+docker run -it --rm --name ipu -e NB_UID=$UID -e NB_GID=$GID -e CHOWN_HOME=yes -e CHOWN_EXTRA_OPTS='-R'  -p custom_port:8888 -v path-to-data:/data ipu:lab
+```
+
+### User permission consistency
+To have consistency between the host and docker users permissions, is suggested to user in docker run those additional environmental parameters
+```
+NB_UID=$UID
+NB_GID=$GID
+CHOWN_HOME=yes
+CHOWN_EXTRA_OPTS='-R'
+```
+Then edit the general configuration dictionary in cell n°3.
+```
+config = {
+'PATH':"../data/",
+'DST_PATH':"../data/",
+'IXT':None,
+'OXT':None,
+'BC':None,
+'SQCRP':None,
+'RES':None,
+'CELL_SIZE':None,
+'LIM':None,
+'LIM_SIZE':None,
+'COG':None
+}
+```
+**PATH and DST_PATH must be edited if the data is contained in subfolders**
+**other parameters, if not set here, will be asked interactively**
+
+### Cloud Optimized Geotiff
+
+Additional configuration is required for creating COG files.
+```
+cog_cfg = {
+    'COMPRESS':'JPEG',
+    #'JPEG_QUALITY=90',
+    #'PHOTOMETRIC=YCBCR',
+    'TILED':'YES',
+    'BLOCKXSIZE':'512',
+    'BLOCKYSIZE':'512',
+    'BIGTIFF':'IF_NEEDED',
+    'ALPHA':'YES',
+    'levels':[2,4,8,16,32,64]
+}
+```

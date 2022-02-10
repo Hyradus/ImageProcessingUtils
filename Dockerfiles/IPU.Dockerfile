@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=jupyter/base-notebook:lab-3.2.8
+ARG BASE_IMAGE=jupyter/base-notebook
 FROM $BASE_IMAGE AS base
 
 MAINTAINER "Giacomo Nodjoumi <giacomo.nodjoumi@hyranet.info>"
@@ -55,4 +55,3 @@ ADD $PWD/Dockerfiles/IPU /home/jovyan/IPU
 RUN chown -R jovyan /home/jovyan/IPU
 USER jovyan
 WORKDIR /home/jovyan/
-ENV JUPYTER_ENABLE_LAB='yes'
