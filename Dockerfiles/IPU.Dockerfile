@@ -53,5 +53,5 @@ RUN pip3 --no-cache-dir install 	\
 FROM base AS ipu
 ADD $PWD/Dockerfiles/IPU /home/jovyan/IPU
 RUN chown -R jovyan /home/jovyan/IPU
-USER jovyan
+
 WORKDIR /home/jovyan/
