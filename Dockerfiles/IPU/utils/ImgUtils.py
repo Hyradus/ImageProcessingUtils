@@ -122,49 +122,64 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                         print('Skipping resize, selected cell size is lower than source cell size')
 
             try:
-                img = src_image.read(window=tile_src_win,
+                img = src.read(window=src_win,
                                out_shape=(cnt, src_height, src_width),
-                               resampling=Resampling.cubic)
-                if img.dtype == 'uint8':
+                               resampling=Resampling.cubic,
+                              masked=True)
+                noData = src.nodata
+                if noData == None:
+                    noData = 0
+                if img.dtype != 'uint8':
                     img = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
-                    #alpha = (255.0/maxval)
-                    #img = cv.convertScaleAbs(img, alpha=alpha)
-                if tile_width*tile_height > 10000:
-                    maxval = img.max()
-                    if maxval != 0:
-                        #print(savename)
-                        noData = src_image.nodata
-                        with rio.open(savename,'w',
-                                  driver='GTiff',
-                                  window=tile_src_win,
-                                  width=tile_width,
-                                  height=tile_height,
-                                  count=cnt,
-                                  nodata=src_image.nodata,
-                                  dtype=img.dtype,
-                                  transform=tile_trs,
-                                  crs=crs) as dst:
-                            dst.write(img)
-                        #print('done')
-                        if cog in ['Yes','yes','Y','y']:
-                            try:
-                                print(cog)
-                                stats = [img[img>src_image.nodata].min(), img[img>src_image.nodata].max(), 1, 255]
-                                if img.dtype=='float32':
-                                    cog_cfg['COMPRESS']='LZW'
-                                    noData=0
-                                cogCreator(savename, cog_cfg, noData, stats)
-                            except Exception as e:
-                                print('error', e)
+                img = rio.plot.reshape_as_raster(img2)
+                img2 = rio.plot.reshape_as_image(img)
+                clahe = cv.createCLAHE(clipLimit=1.0, tileGridSize=(10,10))
+                if img.shape[0]>1:
+                    colorimage_r = clahe.apply(img2[:,:,0])
+                    colorimage_g = clahe.apply(img2[:,:,1])
+                    colorimage_b = clahe.apply(img2[:,:,2])
+                    img2 = np.stack((colorimage_r,colorimage_g,colorimage_b), axis=2)
+                else:
+                    cl1 = clahe.apply(img2)
+                img2 = rio.plot.reshape_as_raster(img2)
+                savename = savename+'.'+oxt
+                # print(savename)
+                with rio.open(savename,'w',
+                          driver='GTiff',
+                          window=src_win,
+                          width=src_width,
+                          height=src_height,
+                          count=cnt,
+                          nodata=noData,
+                          dtype=img.dtype,
+                          transform=dst_trs,
+                          crs=crs) as dst:
+                    dst.write(img)
+                del img2
+                if cog in ['Yes','yes','Y','y']:
+                    try:
+                        #stats = [img[img>im.nodata].min(), img[img>im.nodata].max(), 1, 255, im.nodata]
+                        #stats = [img[img>noData].min(), img[img>noData].max(), 1, 255]
+                        if img.dtype=='float32':
+                            cog_cfg['COMPRESS']='LZW'
+                            noData=0
+                        cogCreator(savename, cog_cfg, noData)
+                    except Exception as e:
+                        data_dict['Errors']=e
+                del img
 
             except Exception as e:
                 print(e)
-                break
+                data_dict['Errors']=e
+            data_dict['Status']='Done'
+            tmp_df = pd.DataFrame.from_dict([data_dict])
+            return tmp_df
 
 
 
 
 def cogCreator(savename, cog_cfg, nodata, stats):
+
     dst_cog = savename.split('.tiff')[0]+'-cog.tiff'
     cfg = []
     for key, values in cog_cfg.items():
@@ -172,9 +187,20 @@ def cogCreator(savename, cog_cfg, nodata, stats):
             cfg.append(values)
         else:
             cfg.append(key+'='+values)
-    final_cog= gdal.Translate(dst_cog, savename, creationOptions=cfg[0:-1], scaleParams=[stats], outputType=gdalconst.GDT_Byte, noData=nodata)
+
+    vrt_name = savename.split('.tiff')[0]+'_tmp.vrt'
+    vrtOpt = gdal.BuildVRTOptions(srcNodata=noDat,addAlpha=True, resampleAlg='cubic')
+    vrt = gdal.BuildVRT(vrt_name, savename, options=vrtOpt)
+    vrt = None
+    warped_vrt = savename.split('.tiff')[0]+'_half.vrt'
+    warpOpt = gdal.WarpOptions(srcNodata=noDat,srcAlpha=True, dstAlpha=True)
+    warped = gdal.Warp(warped_vrt, vrt_name, warpOptions=warpOpt)
+    warped = None
+    final_cog= gdal.Translate(dst_cog, warped_vrt, creationOptions=cfg[0:-1],outputType=gdalconst.GDT_Byte, noData=noDat, scaleParams=[stats])
     final_cog.BuildOverviews('average', cfg[-1])
     final_cog = None
+    os.remove(vrt_name)
+    os.remove(warped_vrt)
     os.remove(savename)
 
 
