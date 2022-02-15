@@ -12,7 +12,7 @@ With this tool is possible to perform single to multiple tasks including:
 * remove black borders for images/tiles
 * crop images/tiles with a 1:1 centered aspect ration
 
-The notebook se served throug a docker image containing all required packages.
+The notebook is served through a docker image containing all required packages.
 
 This study is within the Europlanet 2024 RI and EXPLORE project, and it has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 871149 and No 101004214.
 
