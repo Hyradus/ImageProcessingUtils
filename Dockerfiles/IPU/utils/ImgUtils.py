@@ -129,21 +129,27 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                 noData = src.nodata
                 if noData == None:
                     noData = 0
-                if img.dtype != 'uint8':
-                    img = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
-                img = rio.plot.reshape_as_raster(img2)
-                img2 = rio.plot.reshape_as_image(img)
+
+                    #img = cv.convertScaleAbs(img, alpha=255/img.max())
+                img_reshaped = rio.plot.reshape_as_image(img)
+                del img
                 clahe = cv.createCLAHE(clipLimit=1.0, tileGridSize=(10,10))
-                if img.shape[0]>1:
-                    colorimage_r = clahe.apply(img2[:,:,0])
-                    colorimage_g = clahe.apply(img2[:,:,1])
-                    colorimage_b = clahe.apply(img2[:,:,2])
-                    img2 = np.stack((colorimage_r,colorimage_g,colorimage_b), axis=2)
-                else:
-                    cl1 = clahe.apply(img2)
-                img2 = rio.plot.reshape_as_raster(img2)
+                if img_reshaped.shape[2]>1:
+                    colorimage_r = clahe.apply(img_reshaped[:,:,0])
+                    colorimage_g = clahe.apply(img_reshaped[:,:,1])
+                    colorimage_b = clahe.apply(img_reshaped[:,:,2])
+                    img = np.stack((colorimage_r,colorimage_g,colorimage_b), axis=2)
+                    del colorimage_r
+                    del colorimage_g
+                    del colorimage_b
+
+                    #cl1 = clahe.apply(img)
+                img_cal = clahe.apply(img_reshaped)
+                del img_reshaped
                 savename = savename+'.'+oxt
                 # print(savename)
+                if img_cal.dtype != 'uint8':
+                    img_cal = cv.normalize(img_cal, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
                 with rio.open(savename,'w',
                           driver='GTiff',
                           window=src_win,
@@ -151,22 +157,23 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                           height=src_height,
                           count=cnt,
                           nodata=noData,
-                          dtype=img.dtype,
+                          dtype=img_cal.dtype,
                           transform=dst_trs,
                           crs=crs) as dst:
-                    dst.write(img)
-                del img2
+                    dst.write(rio.plot.reshape_as_raster(img_cal[:,:,np.newaxis]))
+
                 if cog in ['Yes','yes','Y','y']:
                     try:
                         #stats = [img[img>im.nodata].min(), img[img>im.nodata].max(), 1, 255, im.nodata]
                         #stats = [img[img>noData].min(), img[img>noData].max(), 1, 255]
-                        if img.dtype=='float32':
+                        #stats = [img[img>noData].min(), img[img>noData].max(), 0, 255]
+                        if img_cal.dtype=='float32':
                             cog_cfg['COMPRESS']='LZW'
                             noData=0
-                        cogCreator(savename, cog_cfg, noData)
+                        cogCreator(savename, cog_cfg, noData)#, stats)
                     except Exception as e:
                         data_dict['Errors']=e
-                del img
+                del img_cal
 
             except Exception as e:
                 print(e)
@@ -189,14 +196,15 @@ def cogCreator(savename, cog_cfg, nodata, stats):
             cfg.append(key+'='+values)
 
     vrt_name = savename.split('.tiff')[0]+'_tmp.vrt'
-    vrtOpt = gdal.BuildVRTOptions(srcNodata=noDat,addAlpha=True, resampleAlg='cubic')
+    vrtOpt = gdal.BuildVRTOptions(srcNodata=nodata,addAlpha=True, resampleAlg='cubic')
     vrt = gdal.BuildVRT(vrt_name, savename, options=vrtOpt)
     vrt = None
     warped_vrt = savename.split('.tiff')[0]+'_half.vrt'
-    warpOpt = gdal.WarpOptions(srcNodata=noDat,srcAlpha=True, dstAlpha=True)
+    #warpOpt = gdal.WarpOptions(srcNodata=nodata,srcAlpha=True, dstAlpha=True)
+    warpOpt = gdal.WarpOptions(dstAlpha=True)
     warped = gdal.Warp(warped_vrt, vrt_name, warpOptions=warpOpt)
     warped = None
-    final_cog= gdal.Translate(dst_cog, warped_vrt, creationOptions=cfg[0:-1],outputType=gdalconst.GDT_Byte, noData=noDat, scaleParams=[stats])
+    final_cog= gdal.Translate(dst_cog, warped_vrt, creationOptions=cfg[0:-1],outputType=gdalconst.GDT_Byte, scaleParams=[stats])#, noData=nodata
     final_cog.BuildOverviews('average', cfg[-1])
     final_cog = None
     os.remove(vrt_name)
