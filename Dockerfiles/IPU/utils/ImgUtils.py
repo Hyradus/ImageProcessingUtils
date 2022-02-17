@@ -25,8 +25,11 @@ from rasterio.windows import Window
 import math
 from osgeo import gdal
 from osgeo.gdal import gdalconst
+import pandas as pd
 
-def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog_cfg):
+def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog_cfg, bit, data_dict):
+        # from datetime import datetime as dt
+    # start = dt.now()
     src_image = rio.open(image)
     try:
         cnt, src_height, src_width = src_image.shape
@@ -61,6 +64,8 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
             tile_win = Window(x,y,w,h)
             windows.append(tile_win)
             dst_trs = src_image.window_transform(tile_win)
+            # t= rio.windows.transform(win, src_trs)
+            # t = src.window_transform(win)
             transforms.append(dst_trs)
 
     tiles_dict = {'Names':names,
@@ -76,12 +81,16 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
             yoff = tile_win.row_off
             tile_height = tile_src_win.height
             tile_width = tile_src_win.width
+            # tile = img[:,yy:yy+hh, xx:xx+ww]
+            # tile = reshape_as_image(tile)
+            # tile = cv.normalize(tile, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+            # maxval = tile.max()
 
             if bc in ['y','y']:
                 try:
                     tile_width, tile_height, temp_win, tile_trs, savename =  borderCropper(src_image,
                                                                                         tile_src_win,
-                                                                                        savename, oxt)
+                                                                                        savename)
                     tile_col_off = tile_src_win.col_off + temp_win.col_off
                     tile_row_off = tile_src_win.row_off + temp_win.row_off
                     tile_width = temp_win.width
@@ -91,89 +100,101 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                                       height = tile_height)
                     tile_trs = src_image.window_transform(tile_src_win)
                 except Exception as e:
-                    print(e, 'skip', sname)
+
+                    data_dict['Status']=e
                     pass
 
             if sqcrp in ['Y','y']:
 
                 try:
-                   tile_width, tile_height, tile_src_win, tile_trs, savename = square_crop(src_image,
+                    tile_width, tile_height, tile_src_win, tile_trs, savename = square_crop(src_image,
                                                                           tile_width,
                                                                           tile_height,
                                                                           tile_src_win,
-                                                                          savename, oxt)
+                                                                          savename)
                 except Exception as e:
-                    print(e)
+                    data_dict['Status']=e
                     pass
-                if res in ['Y', 'y']:
-                    if cell_size >= src.transform[0]:
-                        try:
-                            src_height, src_width, dst_trs, savename = CellSizeScale(src,
-                                                                                     src_height,
-                                                                                     src_width,
-                                                                                     float(cell_size),
-                                                                                     dst_trs,
-                                                                                     savename,
-                                                                                     oxt)
-                        except Exception as e:
-                            print(e)
-                            pass
-                    else:
-                        print('Skipping resize, selected cell size is lower than source cell size')
+
+            if res in ['Y', 'y']:
+                try:
+                    tile_height, tile_width, tile_trs, savename = CellSizeScale(src_image,
+                                                                             tile_height,
+                                                                             tile_width,
+                                                                             float(cell_size),
+                                                                             tile_trs,
+                                                                             savename)
+                except Exception as e:
+                    data_dict['Status']=e
+                    pass
 
             try:
-                img = src.read(window=src_win,
-                               out_shape=(cnt, src_height, src_width),
-                               resampling=Resampling.cubic,
-                              masked=True)
-                noData = src.nodata
+                img = src_image.read(window=tile_src_win,
+                                out_shape=(cnt, tile_height, tile_width),
+                                resampling=Resampling.cubic)
+                noData = src_image.nodata
                 if noData == None:
                     noData = 0
-                if img.dtype != 'uint8':
-                    img = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
-                img = rio.plot.reshape_as_raster(img2)
-                img2 = rio.plot.reshape_as_image(img)
-                clahe = cv.createCLAHE(clipLimit=1.0, tileGridSize=(10,10))
-                if img.shape[0]>1:
-                    colorimage_r = clahe.apply(img2[:,:,0])
-                    colorimage_g = clahe.apply(img2[:,:,1])
-                    colorimage_b = clahe.apply(img2[:,:,2])
-                    img2 = np.stack((colorimage_r,colorimage_g,colorimage_b), axis=2)
-                else:
-                    cl1 = clahe.apply(img2)
-                img2 = rio.plot.reshape_as_raster(img2)
-                savename = savename+'.'+oxt
-                # print(savename)
-                with rio.open(savename,'w',
-                          driver='GTiff',
-                          window=src_win,
-                          width=src_width,
-                          height=src_height,
-                          count=cnt,
-                          nodata=noData,
-                          dtype=img.dtype,
-                          transform=dst_trs,
-                          crs=crs) as dst:
-                    dst.write(img)
-                del img2
-                if cog in ['Yes','yes','Y','y']:
-                    try:
-                        #stats = [img[img>im.nodata].min(), img[img>im.nodata].max(), 1, 255, im.nodata]
-                        #stats = [img[img>noData].min(), img[img>noData].max(), 1, 255]
-                        if img.dtype=='float32':
-                            cog_cfg['COMPRESS']='LZW'
-                            noData=0
-                        cogCreator(savename, cog_cfg, noData)
-                    except Exception as e:
-                        data_dict['Errors']=e
+                img_reshaped = rio.plot.reshape_as_image(img)
                 del img
+                _ = gc.collect()
+                if src_height > src_width:
+                    gridval =src_height*0.5
+                else:
+                    gridval =src_width*0.5
+                gridsize = (int(gridval),int(gridval))
+                clahe = cv.createCLAHE(clipLimit=0.7, tileGridSize=(5,5))
+                if img_reshaped.shape[2]>1:
+                    colorimage_r = clahe.apply(img_reshaped[:,:,0])
+                    colorimage_g = clahe.apply(img_reshaped[:,:,1])
+                    colorimage_b = clahe.apply(img_reshaped[:,:,2])
+                    img_eqa = np.stack((colorimage_r,colorimage_g,colorimage_b), axis=2)
+                    del colorimage_r
+                    del colorimage_g
+                    del colorimage_b
+                else:
+                        img_eqa = clahe.apply(img_reshaped)
 
+                del img_reshaped
+                _ = gc.collect()
+                if bit.lower() in ['yes','ye','y']:
+                    img_eqa = cv.normalize(img_eqa, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+                if tile_width*tile_height > 10000:
+                    with rio.open(savename,'w',
+                            driver='GTiff',
+                            window=tile_src_win,
+                            width=tile_width,
+                            height=tile_height,
+                            count=cnt,
+                            nodata=noData,
+                            dtype=img_eqa.dtype,
+                            transform=tile_trs,
+                            crs=crs) as dst:
+                        dst.write(rio.plot.reshape_as_raster(img_eqa[:,:,np.newaxis]))
+
+                    if cog in ['Yes','yes','Y','y']:
+                        try:
+                            #stats = [img[img>nodata].min(), img[img>im.nodata].max(), 1, 255, im.nodata]
+                            #stats = [img_eqa[img_eqa>noData].min(), img_eqa[img_eqa>noData].max(), 1, 255]
+                            #stats = [img_eqa[img_eqa>noData].min(), img_eqa[img_eqa>noData].max(), 0, 255]
+                            stats = [img_eqa.min(),img_eqa.max(),0,255]
+                            if img_eqa.dtype!='uint8':
+                                cog_cfg['COMPRESS']='LZW'
+                                noData=0
+                            cogCreator(savename, cog_cfg, noData, stats)
+                        except Exception as e:
+                            print(e)
+                            data_dict['Errors']=e
+                    del img_eqa
+                    _ = gc.collect()
+                    data_dict['Status']='Done'
             except Exception as e:
                 print(e)
                 data_dict['Errors']=e
-            data_dict['Status']='Done'
-            tmp_df = pd.DataFrame.from_dict([data_dict])
-            return tmp_df
+                data_dict['Status']='Error'
+    data_dict['Status']='Done'
+    tmp_df = pd.DataFrame.from_dict([data_dict])
+    return tmp_df
 
 
 
@@ -189,14 +210,15 @@ def cogCreator(savename, cog_cfg, nodata, stats):
             cfg.append(key+'='+values)
 
     vrt_name = savename.split('.tiff')[0]+'_tmp.vrt'
-    vrtOpt = gdal.BuildVRTOptions(srcNodata=noDat,addAlpha=True, resampleAlg='cubic')
+    vrtOpt = gdal.BuildVRTOptions(srcNodata=nodata,addAlpha=True, resampleAlg='cubic')
     vrt = gdal.BuildVRT(vrt_name, savename, options=vrtOpt)
     vrt = None
     warped_vrt = savename.split('.tiff')[0]+'_half.vrt'
-    warpOpt = gdal.WarpOptions(srcNodata=noDat,srcAlpha=True, dstAlpha=True)
+    #warpOpt = gdal.WarpOptions(srcNodata=nodata,srcAlpha=True, dstAlpha=True)
+    warpOpt = gdal.WarpOptions(dstAlpha=True)
     warped = gdal.Warp(warped_vrt, vrt_name, warpOptions=warpOpt)
     warped = None
-    final_cog= gdal.Translate(dst_cog, warped_vrt, creationOptions=cfg[0:-1],outputType=gdalconst.GDT_Byte, noData=noDat, scaleParams=[stats])
+    final_cog= gdal.Translate(dst_cog, warped_vrt, creationOptions=cfg[0:-1], scaleParams=[stats], noData=nodata)#,outputType=gdalconst.GDT_Byte,
     final_cog.BuildOverviews('average', cfg[-1])
     final_cog = None
     os.remove(vrt_name)
@@ -308,7 +330,7 @@ def square_crop(src, src_width, src_height, src_win, savename, oxt):
     savename = savename.split('.'+oxt)[0]+'_centered'
     return(src_width, src_height, src_win, dst_trs, savename)
 
-def CellSizeScale(src, src_height, src_width, cell_size, dst_trs, savename, oxt):
+def CellSizeScale(src, src_height, src_width, cell_size, dst_trs, savename):
     cell_sizeX = abs(src.transform[0])
     cell_sizeY = abs(src.transform[4])
     dst_cell_sizeX = cell_size
@@ -322,7 +344,7 @@ def CellSizeScale(src, src_height, src_width, cell_size, dst_trs, savename, oxt)
             (src_height/dst_height))
     src_width = copy(dst_width)
     src_height = copy(dst_height)
-    savename = savename+'_resized_'+str(cell_size).replace('.','-')+'m'
+    savename = savename+'_resized_'+str(cell_size)+'m'
     return(src_height, src_width, dst_trs, savename)
 
 def GTiffImageResizer(image, dim):
