@@ -159,6 +159,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                 _ = gc.collect()
                 if bit.lower() in ['yes','ye','y']:
                     img_eqa = cv.normalize(img_eqa, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+                    noData=0
                 if tile_width*tile_height > 10000:
                     with rio.open(savename,'w',
                             driver='GTiff',
