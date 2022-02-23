@@ -129,36 +129,47 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                     pass
 
             try:
-                img = src_image.read(window=tile_src_win,
-                                out_shape=(cnt, tile_height, tile_width),
-                                resampling=Resampling.cubic)
-                noData = src_image.nodata
+                img = src.read(window=src_win,
+                                   out_shape=(cnt, src_height, src_width),
+                                   resampling=Resampling.cubic,
+                                  masked=True)
+                noData = src.nodata
                 if noData == None:
                     noData = 0
-                img_reshaped = rio.plot.reshape_as_image(img)
-                del img
+
                 _ = gc.collect()
                 if src_height > src_width:
                     gridval =src_height*0.5
                 else:
                     gridval =src_width*0.5
                 gridsize = (int(gridval),int(gridval))
-                clahe = cv.createCLAHE(clipLimit=0.7, tileGridSize=(5,5))
-                if img_reshaped.shape[2]>1:
-                    colorimage_r = clahe.apply(img_reshaped[:,:,0])
-                    colorimage_g = clahe.apply(img_reshaped[:,:,1])
-                    colorimage_b = clahe.apply(img_reshaped[:,:,2])
-                    img_eqa = np.stack((colorimage_r,colorimage_g,colorimage_b), axis=2)
-                    del colorimage_r
-                    del colorimage_g
-                    del colorimage_b
+                if dem.lower() in ['yes','ye','y']:
+                    pass
                 else:
+                    img_reshaped = rio.plot.reshape_as_image(img)
+                    #del img
+                    _ = gc.collect()
+                    clahe = cv.createCLAHE(clipLimit=0.7, tileGridSize=(5,5))        
+                    if img_reshaped.shape[2]>1:                        
+                        colorimage_r = clahe.apply(img_reshaped[:,:,0])
+                        colorimage_g = clahe.apply(img_reshaped[:,:,1])
+                        colorimage_b = clahe.apply(img_reshaped[:,:,2])
+                        img_eqa = np.stack((colorimage_r,colorimage_g,colorimage_b), axis=2)
+                        del colorimage_r
+                        del colorimage_g
+                        del colorimage_b
+                        img = rio.plot.reshape_as_raster(img_eqa[:,:,np.newaxis])
+                        del img_eqa
+                    else:
                         img_eqa = clahe.apply(img_reshaped)
+                        img = rio.plot.reshape_as_raster(img_eqa[:,:,np.newaxis])
+                        del img_eqa
+                    _ = gc.collect()
 
-                del img_reshaped
+
                 _ = gc.collect()
-                if bit.lower() in ['yes','ye','y']:
-                    img_eqa = cv.normalize(img_eqa, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+                if bit.lower() in ['yes','ye','y']:              
+                    img = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
                     noData=0
                 if tile_width*tile_height > 10000:
                     with rio.open(savename,'w',
@@ -171,24 +182,24 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                             dtype=img_eqa.dtype,
                             transform=tile_trs,
                             crs=crs) as dst:
-                        dst.write(rio.plot.reshape_as_raster(img_eqa[:,:,np.newaxis]))
+                        dst.write(img)
 
-                    if cog in ['Yes','yes','Y','y']:
-                        try:
-                            #stats = [img[img>nodata].min(), img[img>im.nodata].max(), 1, 255, im.nodata]
-                            #stats = [img_eqa[img_eqa>noData].min(), img_eqa[img_eqa>noData].max(), 1, 255]
-                            #stats = [img_eqa[img_eqa>noData].min(), img_eqa[img_eqa>noData].max(), 0, 255]
-                            stats = [img_eqa.min(),img_eqa.max(),0,255]
-                            if img_eqa.dtype!='uint8':
-                                cog_cfg['COMPRESS']='LZW'
-                                noData=0
-                            cogCreator(savename, cog_cfg, noData, stats)
-                        except Exception as e:
-                            print(e)
-                            data_dict['Errors']=e
-                    del img_eqa
-                    _ = gc.collect()
-                    data_dict['Status']='Done'
+                if cog in ['Yes','yes','Y','y']:
+                    try:
+                        #stats = [img[img>nodata].min(), img[img>im.nodata].max(), 1, 255, im.nodata]
+                        #stats = [img_eqa[img_eqa>noData].min(), img_eqa[img_eqa>noData].max(), 1, 255]
+                        #stats = [img_eqa[img_eqa>noData].min(), img_eqa[img_eqa>noData].max(), 0, 255]
+                        stats = [img_eqa.min(),img_eqa.max(),0,255]
+                        if img_eqa.dtype!='uint8':
+                            cog_cfg['COMPRESS']='LZW'
+                            noData=0
+                        cogCreator(savename, cog_cfg, noData, stats)
+                    except Exception as e:
+                        print(e)
+                        data_dict['Errors']=e
+                del img_eqa
+                _ = gc.collect()
+                data_dict['Status']='Done'
             except Exception as e:
                 print(e)
                 data_dict['Errors']=e
@@ -197,34 +208,36 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
     tmp_df = pd.DataFrame.from_dict([data_dict])
     return tmp_df
 
+def gdalWriter(driverName, src_image, shape, dst_name,transform, srs):
+    driver=gdal.GetDriverByName(driverName)
+    rows, cols, bands = shape
 
 
-
-def cogCreator(savename, cog_cfg, nodata, stats):
-
-    dst_cog = savename.split('.tiff')[0]+'-cog.tiff'
-    cfg = []
-    for key, values in cog_cfg.items():
-        if key == 'levels':
-            cfg.append(values)
+def cogCreator(savename, cog_cfg, nodata, otype):#, stats):
+    
+    base_opts = f'-a_nodata {nodata} -mask none -scale -ot {otype}'
+    tmp_opts=base_opts
+    final_opts=base_opts
+    for k, v in cog_cfg.items():
+        if k in ['levels','RESAMPLING']:
+            pass
+        elif k in ['TILED','COMPRESS']:
+            final_opts = final_opts + f' -co {k}'+f'={v}'
+            tmp_opts = tmp_opts+  f' -co {k}'+f'={v}'
         else:
-            cfg.append(key+'='+values)
+            final_opts = final_opts + f' -co {k}'+f'={v}'
+        final_opts = final_opts + f' -co COPY_SRC_OVERVIEWS=YES'
 
-    vrt_name = savename.split('.tiff')[0]+'_tmp.vrt'
-    vrtOpt = gdal.BuildVRTOptions(srcNodata=nodata,addAlpha=True, resampleAlg='cubic')
-    vrt = gdal.BuildVRT(vrt_name, savename, options=vrtOpt)
-    vrt = None
-    warped_vrt = savename.split('.tiff')[0]+'_half.vrt'
-    #warpOpt = gdal.WarpOptions(srcNodata=nodata,srcAlpha=True, dstAlpha=True)
-    warpOpt = gdal.WarpOptions(dstAlpha=True)
-    warped = gdal.Warp(warped_vrt, vrt_name, warpOptions=warpOpt)
-    warped = None
-    final_cog= gdal.Translate(dst_cog, warped_vrt, creationOptions=cfg[0:-1], scaleParams=[stats], noData=nodata)#,outputType=gdalconst.GDT_Byte,
-    final_cog.BuildOverviews('average', cfg[-1])
+
+    dst_tmp_cog = savename.split('.tiff')[0]+'-tmp-cog.tiff'
+    tmp_cog=gdal.Translate(dst_tmp_cog, savename, options=tmp_opts)#,scaleParams=[])
+    tmp_cog.BuildOverviews(cog_cfg['RESAMPLING'], cog_cfg['levels'])
+    tmp_cog = None
+    final_cog = savename.split('.tiff')[0]+'-cog.tiff'
+    final_cog=gdal.Translate(final_cog, dst_tmp_cog, options=final_opts)#,scaleParams=[])
     final_cog = None
-    os.remove(vrt_name)
-    os.remove(warped_vrt)
-    os.remove(savename)
+    os.remove(dst_tmp_cog)
+    
 
 
 def borderCropper(src, source_win,savename, oxt):
