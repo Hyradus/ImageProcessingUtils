@@ -27,20 +27,18 @@ from osgeo import gdal
 from osgeo.gdal import gdalconst
 import pandas as pd
 
-def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog_cfg, bit, data_dict):
+def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog_cfg, bit, data_dict, dem):
         # from datetime import datetime as dt
     # start = dt.now()
-    src_image = rio.open(image)
+    src = rio.open(image)
     try:
-        cnt, src_height, src_width = src_image.shape
+        cnt, src_height, src_width = src.shape
     except:
-        src_height, src_width = src_image.shape
+        src_height, src_width = src.shape
         cnt = 1
 
-    crs = src_image.crs
-    src_trs = src_image.transform
-    # img = src_image.read()
-
+    crs = src.crs
+    src_trs = src.transform
     vt=Dim2Tile(max_dim, src_width)
     ht = Dim2Tile(max_dim, src_height)
     vt, ht = TileNumCheck(vt,ht, src_width, src_height, max_dim)
@@ -53,7 +51,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
     for ih in range(ht):
 
         for iw in range(vt):
-            sname = savename.split('.'+oxt)[0]+'_H'+str(ih)+'_V'+str(iw)+'.'+oxt
+            sname = savename.split('.'+oxt)[0]+'_H'+str(ih)+'_V'+str(iw)
             names.append(sname)
 
             x = math.floor(src_width/vt*iw)
@@ -63,7 +61,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
 
             tile_win = Window(x,y,w,h)
             windows.append(tile_win)
-            dst_trs = src_image.window_transform(tile_win)
+            dst_trs = src.window_transform(tile_win)
             # t= rio.windows.transform(win, src_trs)
             # t = src.window_transform(win)
             transforms.append(dst_trs)
@@ -81,14 +79,10 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
             yoff = tile_win.row_off
             tile_height = tile_src_win.height
             tile_width = tile_src_win.width
-            # tile = img[:,yy:yy+hh, xx:xx+ww]
-            # tile = reshape_as_image(tile)
-            # tile = cv.normalize(tile, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
-            # maxval = tile.max()
 
             if bc in ['y','y']:
                 try:
-                    tile_width, tile_height, temp_win, tile_trs, savename =  borderCropper(src_image,
+                    tile_width, tile_height, temp_win, tile_trs, savename =  borderCropper(src,
                                                                                         tile_src_win,
                                                                                         savename)
                     tile_col_off = tile_src_win.col_off + temp_win.col_off
@@ -98,7 +92,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                     tile_src_win = Window(col_off=tile_col_off, row_off=tile_row_off,
                                       width=tile_width,
                                       height = tile_height)
-                    tile_trs = src_image.window_transform(tile_src_win)
+                    tile_trs = src.window_transform(tile_src_win)
                 except Exception as e:
 
                     data_dict['Status']=e
@@ -107,7 +101,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
             if sqcrp in ['Y','y']:
 
                 try:
-                    tile_width, tile_height, tile_src_win, tile_trs, savename = square_crop(src_image,
+                    tile_width, tile_height, tile_src_win, tile_trs, savename = square_crop(src,
                                                                           tile_width,
                                                                           tile_height,
                                                                           tile_src_win,
@@ -118,7 +112,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
 
             if res in ['Y', 'y']:
                 try:
-                    tile_height, tile_width, tile_trs, savename = CellSizeScale(src_image,
+                    tile_height, tile_width, tile_trs, savename = CellSizeScale(src,
                                                                              tile_height,
                                                                              tile_width,
                                                                              float(cell_size),
@@ -127,88 +121,73 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                 except Exception as e:
                     data_dict['Status']=e
                     pass
-
+                
             try:
-                img = src.read(window=src_win,
-                                   out_shape=(cnt, src_height, src_width),
-                                   resampling=Resampling.cubic,
-                                  masked=True)
-                noData = src.nodata
+                img = src.read(window=tile_src_win,
+                               out_shape=(cnt, tile_height, tile_width),
+                               resampling=Resampling.cubic,
+                              masked=True)
+                noData=src.nodata
                 if noData == None:
                     noData = 0
-
-                _ = gc.collect()
-                if src_height > src_width:
-                    gridval =src_height*0.5
-                else:
-                    gridval =src_width*0.5
-                gridsize = (int(gridval),int(gridval))
                 if dem.lower() in ['yes','ye','y']:
-                    pass
-                else:
-                    img_reshaped = rio.plot.reshape_as_image(img)
-                    #del img
-                    _ = gc.collect()
-                    clahe = cv.createCLAHE(clipLimit=0.7, tileGridSize=(5,5))        
-                    if img_reshaped.shape[2]>1:                        
-                        colorimage_r = clahe.apply(img_reshaped[:,:,0])
-                        colorimage_g = clahe.apply(img_reshaped[:,:,1])
-                        colorimage_b = clahe.apply(img_reshaped[:,:,2])
-                        img_eqa = np.stack((colorimage_r,colorimage_g,colorimage_b), axis=2)
-                        del colorimage_r
-                        del colorimage_g
-                        del colorimage_b
-                        img = rio.plot.reshape_as_raster(img_eqa[:,:,np.newaxis])
-                        del img_eqa
-                    else:
-                        img_eqa = clahe.apply(img_reshaped)
-                        img = rio.plot.reshape_as_raster(img_eqa[:,:,np.newaxis])
-                        del img_eqa
-                    _ = gc.collect()
 
+                    print('DEM cannot be 8bit')
+                    bit = 'n'          
 
-                _ = gc.collect()
-                if bit.lower() in ['yes','ye','y']:              
-                    img = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
-                    noData=0
-                if tile_width*tile_height > 10000:
-                    with rio.open(savename,'w',
-                            driver='GTiff',
-                            window=tile_src_win,
-                            width=tile_width,
-                            height=tile_height,
-                            count=cnt,
-                            nodata=noData,
-                            dtype=img_eqa.dtype,
-                            transform=tile_trs,
-                            crs=crs) as dst:
-                        dst.write(img)
+                #savename = savename+'.'+oxt
+                with rio.open(savename,'w',
+                          driver='GTiff',
+                          window=tile_src_win,
+                          width=tile_width,
+                          height=tile_height,
+                          count=cnt,
+                          nodata=noData,
+                          dtype=img.dtype,
+                          transform=tile_trs,
+                          crs=crs) as dst:
+                    dst.write(img)
+
+                if bit.lower() in ['yes','ye','y']:
+                    savebit=savename+'-8bit.'+oxt
+                    opts = f'-a_nodata 0 -mask none -scale -ot Byte' 
+                    gdal.Translate(savebit,savename, options=opts)
+
 
                 if cog in ['Yes','yes','Y','y']:
+                    dtype=img.dtype
+                    if bit.lower() in ['yes','ye','y']:
+                        dtype ='uint8'
                     try:
-                        #stats = [img[img>nodata].min(), img[img>im.nodata].max(), 1, 255, im.nodata]
-                        #stats = [img_eqa[img_eqa>noData].min(), img_eqa[img_eqa>noData].max(), 1, 255]
-                        #stats = [img_eqa[img_eqa>noData].min(), img_eqa[img_eqa>noData].max(), 0, 255]
-                        stats = [img_eqa.min(),img_eqa.max(),0,255]
-                        if img_eqa.dtype!='uint8':
+                        if dtype in ['float32']:
+                            cog_cfg['COMPRESS']='LZW'                            
+                            otype='Float32'
+                        if dtype in ['uint16','uint32','uint8']:
                             cog_cfg['COMPRESS']='LZW'
-                            noData=0
-                        cogCreator(savename, cog_cfg, noData, stats)
+                            if dtype in ['uint8']:
+                                otype='Byte'
+                                noData=0
+                            elif dtype in ['uint16']:
+                                otype='UInt16'
+                            else:
+                                otype='UInt32'                                               
+                        cogCreator(savename, cog_cfg, noData, otype)
                     except Exception as e:
                         print(e)
                         data_dict['Errors']=e
-                del img_eqa
-                _ = gc.collect()
+                del img
+                _ = gc.collect()                
                 data_dict['Status']='Done'
             except Exception as e:
                 print(e)
-                data_dict['Errors']=e
-                data_dict['Status']='Error'
+                del img
+                _ = gc.collect()               
+
     data_dict['Status']='Done'
     tmp_df = pd.DataFrame.from_dict([data_dict])
     return tmp_df
 
-def gdalWriter(driverName, src_image, shape, dst_name,transform, srs):
+def gdalWriter(driverName, src, shape, dst_name,transform, srs):
     driver=gdal.GetDriverByName(driverName)
     rows, cols, bands = shape
 
@@ -218,6 +197,8 @@ def cogCreator(savename, cog_cfg, nodata, otype):#, stats):
     base_opts = f'-a_nodata {nodata} -mask none -scale -ot {otype}'
     tmp_opts=base_opts
     final_opts=base_opts
+    #if otype in ['Byte']:
+        #cog_cfg['COMPRESS']='JPEG'
     for k, v in cog_cfg.items():
         if k in ['levels','RESAMPLING']:
             pass

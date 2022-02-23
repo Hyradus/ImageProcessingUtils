@@ -46,30 +46,34 @@ CHOWN_HOME=yes
 CHOWN_EXTRA_OPTS='-R'
 ```
 Then edit the general configuration dictionary in cell n°3.
+
 ```
 config = {
 'PATH':"../data/",
 'DST_PATH':"../data/",
-'IXT':None,
-'OXT':None,
-'BC':None,
-'SQCRP':None,
-'RES':None,
-'CELL_SIZE':None,
-'LIM':None,
+'IXT':'cub',
+'OXT':'tiff',
+'BC':'n',
+'SQCRP':'n',
+'RES':'y',
+'CELL_SIZE':'2',
+'LIM':'n',
 'LIM_SIZE':None,
-'COG':None
+'COG':'y',
+'8bit':'y',
+'dem':'n'
 }
 ```
 **PATH and DST_PATH must be edited if the data is contained in subfolders**
 **other parameters, if not set here, will be asked interactively**
-
+**dem is a flag to avoid JPEG compression and 8bit conversion when source image is a DEM
 ### Cloud Optimized Geotiff
 
-Additional configuration is required for creating COG files.
+Additional configuration is required for creating COG files in [COG Config](#COG_Config).
 ```
 cog_cfg = {
     'COMPRESS':'JPEG',
+    'RESAMPLING':'NEAREST',
     #'JPEG_QUALITY=90',
     #'PHOTOMETRIC=YCBCR',
     'TILED':'YES',
@@ -80,3 +84,6 @@ cog_cfg = {
     'levels':[2,4,8,16,32,64]
 }
 ```
+
+## Acknowledgment
+This work is within the Europlanet 2024 RI and EXPLORE project, and it has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 871149 and No 101004214.
