@@ -202,12 +202,12 @@ def cogCreator(savename, cog_cfg, nodata, otype):#, stats):
     for k, v in cog_cfg.items():
         if k in ['levels','RESAMPLING']:
             pass
-        elif k in ['TILED','COMPRESS']:
+        elif k in ['TILED','COMPRESS','BIGTIFF']:
             final_opts = final_opts + f' -co {k}'+f'={v}'
             tmp_opts = tmp_opts+  f' -co {k}'+f'={v}'
         else:
             final_opts = final_opts + f' -co {k}'+f'={v}'
-        final_opts = final_opts + f' -co COPY_SRC_OVERVIEWS=YES'
+    final_opts = final_opts + f' -co COPY_SRC_OVERVIEWS=YES'
 
 
     dst_tmp_cog = savename.split('.tiff')[0]+'-tmp-cog.tiff'
