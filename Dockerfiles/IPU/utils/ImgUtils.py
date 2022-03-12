@@ -26,8 +26,10 @@ import math
 from osgeo import gdal
 from osgeo.gdal import gdalconst
 import pandas as pd
+from rio_cogeo.cogeo import cog_translate
+from rio_cogeo.profiles import cog_profiles
 
-def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog_cfg, bit, data_dict, dem):
+def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog_cfg, bit, data_dict, dem, ixt):
         # from datetime import datetime as dt
     # start = dt.now()
     src = rio.open(image)
@@ -135,7 +137,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                     print('DEM cannot be 8bit')
                     bit = 'n'          
 
-                #savename = savename+'.'+oxt
+                savename = savename+'.'+oxt
                 with rio.open(savename,'w',
                           driver='GTiff',
                           window=tile_src_win,
@@ -147,35 +149,21 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                           transform=tile_trs,
                           crs=crs) as dst:
                     dst.write(img)
-
-                if bit.lower() in ['yes','ye','y']:
-                    savebit=savename+'-8bit.'+oxt
-                    opts = f'-a_nodata 0 -mask none -scale -ot Byte' 
-                    gdal.Translate(savebit,savename, options=opts)
-
-
+                del img
+                
                 if cog in ['Yes','yes','Y','y']:
-                    dtype=img.dtype
-                    if bit.lower() in ['yes','ye','y']:
-                        dtype ='uint8'
+                    
                     try:
-                        if dtype in ['float32']:
-                            cog_cfg['COMPRESS']='LZW'                            
-                            otype='Float32'
-                        if dtype in ['uint16','uint32','uint8']:
-                            cog_cfg['COMPRESS']='LZW'
-                            if dtype in ['uint8']:
-                                otype='Byte'
-                                noData=0
-                            elif dtype in ['uint16']:
-                                otype='UInt16'
-                            else:
-                                otype='UInt32'                                               
-                        cogCreator(savename, cog_cfg, noData, otype)
+                        source = savename
+                        dest = savename.split('.'+ixt)[0]+'-cog.'+oxt  
+                        _translate(source, dest,profile='DEFLATE', profile_options=cog_cfg)
                     except Exception as e:
                         print(e)
                         data_dict['Errors']=e
-                del img
+            
+                data_dict['Status']='Done'
+                tmp_df = pd.DataFrame.from_dict([data_dict])   
+                
                 _ = gc.collect()                
                 data_dict['Status']='Done'
             except Exception as e:
@@ -191,10 +179,35 @@ def gdalWriter(driverName, src, shape, dst_name,transform, srs):
     driver=gdal.GetDriverByName(driverName)
     rows, cols, bands = shape
 
+def _translate(src_path, dst_path, profile="webp", profile_options={}, **options):
+    #source: https://github.com/cogeotiff/rio-cogeo
+    """Convert image to COG."""
+    # Format creation option (see gdalwarp `-co` option)
+    output_profile = cog_profiles.get(profile)
+    output_profile.update(dict(BIGTIFF="IF_SAFER"))
+    output_profile.update(profile_options)
+
+    # Dataset Open option (see gdalwarp `-oo` option)
+    config = dict(
+        GDAL_NUM_THREADS="ALL_CPUS",
+        GDAL_TIFF_INTERNAL_MASK=True,
+        GDAL_TIFF_OVR_BLOCKSIZE="128",
+    )
+
+    cog_translate(
+        src_path,
+        dst_path,
+        output_profile,
+        config=config,
+        in_memory=False,
+        quiet=True,
+        **options,
+    )
+    return True
 
 def cogCreator(savename, cog_cfg, nodata, otype):#, stats):
     
-    base_opts = f'-a_nodata {nodata} -mask none -scale -ot {otype}'
+    base_opts = f'-a_nodata {nodata} -mask none -ot {otype}'
     tmp_opts=base_opts
     final_opts=base_opts
     #if otype in ['Byte']:
