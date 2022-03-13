@@ -44,6 +44,7 @@ RUN pip3 --no-cache-dir install 	\
                           psutil \
                           pygeos \
                           rasterio \
+                          rio-cogeo \
                           scikit-image \
                           scipy \
                           shapely \
