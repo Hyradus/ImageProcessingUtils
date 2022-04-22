@@ -30,7 +30,6 @@ RUN apt update && apt install --no-install-recommends -y 	\
 
 RUN pip3 --no-cache-dir install 	\
     git+https://${GITHUB_TOKEN}@github.com/Hyradus/maxrect.git \
-
     && rm -rf /var/lib/apt/lists/* \
     && mamba install -c conda-forge \
                           fiona \

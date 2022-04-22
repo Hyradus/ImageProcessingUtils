@@ -130,8 +130,13 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                                resampling=Resampling.cubic,
                               masked=True)
                 noData=src.nodata
+                dt = img.dtype
                 if noData == None:
                     noData = 0
+                if bit in ['yes','ye','y']:
+                    noData=0
+                    img = cv.convertScaleAbs(img,alpha=(255.0/img.max()))
+                    dt = img.dtype
                 if dem.lower() in ['yes','ye','y']:
 
                     print('DEM cannot be 8bit')
@@ -145,18 +150,21 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                           height=tile_height,
                           count=cnt,
                           nodata=noData,
-                          dtype=img.dtype,
+                          dtype=dt,
                           transform=tile_trs,
                           crs=crs) as dst:
                     dst.write(img)
                 del img
                 
                 if cog in ['Yes','yes','Y','y']:
-                    
+                    print('cog')
                     try:
+                        
                         source = savename
-                        dest = savename.split('.'+ixt)[0]+'-cog.'+oxt  
-                        _translate(source, dest,profile='DEFLATE', profile_options=cog_cfg)
+                        #dest = savename.split('.'+ixt)[0]+'-cog.'+oxt
+                        dest = savename.split('.'+oxt)[0]+'-cog.'+oxt  
+
+                        _translate(source, dest,profile='JPEG', profile_options=cog_cfg)
                     except Exception as e:
                         print(e)
                         data_dict['Errors']=e
