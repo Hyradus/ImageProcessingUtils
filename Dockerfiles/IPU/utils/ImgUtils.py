@@ -29,7 +29,7 @@ import pandas as pd
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
 
-def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog_cfg, bit, data_dict, dem, ixt):
+def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog_cfg, bit, data_dict, dem, ixt, overlap):
         # from datetime import datetime as dt
     # start = dt.now()
     src = rio.open(image)
@@ -60,7 +60,15 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
             y = math.floor(src_height/ht*ih)
             h = math.floor(src_height/ht)
             w = math.floor(src_width/vt)
-
+            if overlap != None:
+                x=math.floor(x-x*overlap/100)
+                y=math.floor(y-y*overlap/100)
+                h=math.floor(h+h*overlap/100)
+                w=math.floor(w+w*overlap/100)
+            if h > math.floor(src_height/ht):
+                h=math.floor(src_height/ht)
+            if w > math.floor(src_width/vt):
+                w = math.floor(src_width/vt)
             tile_win = Window(x,y,w,h)
             windows.append(tile_win)
             dst_trs = src.window_transform(tile_win)

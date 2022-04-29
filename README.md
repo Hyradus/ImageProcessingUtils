@@ -34,7 +34,7 @@ sudo chmod +x ImageBuilder.sh
 ## Usage
 
 ```
-docker run -it --rm --name ipu -e NB_UID=$UID -e NB_GID=$GID -e CHOWN_HOME=yes -e CHOWN_EXTRA_OPTS='-R'  -p custom_port:8888 -v path-to-data:/data ipu:lab
+docker run -it --rm --name ipu -e NB_UID=$UID -e NB_GID=$UID -e CHOWN_HOME=yes -e CHOWN_EXTRA_OPTS='-R'  -p custom_port:8888 -v path-to-data:/home/jovyan/data ipu:lab
 ```
 
 ### User permission consistency
@@ -61,7 +61,8 @@ config = {
 'LIM_SIZE':None,
 'COG':'y',
 '8bit':'y',
-'dem':'n'
+'dem':'n',
+'overlap':5
 }
 ```
 **PATH and DST_PATH must be edited if the data is contained in subfolders**
