@@ -28,7 +28,7 @@ from osgeo.gdal import gdalconst
 import pandas as pd
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
-
+from skimage.exposure import match_histograms
 def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog_cfg, bit, data_dict, dem, ixt, overlap):
         # from datetime import datetime as dt
     # start = dt.now()
@@ -144,9 +144,15 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                 if noData == None:
                     noData = 0
                 if bit in ['yes','ye','y']:
-                    noData=0
+                    noData=0                
                     img = cv.convertScaleAbs(img,alpha=(255.0/img.max()))
                     dt = img.dtype
+                    
+                if i==0:
+                    img0=img.copy()
+                else:
+                    img=matched = match_histograms(img, img0, channel_axis=-1)
+                
                 if dem.lower() in ['yes','ye','y']:
 
                     print('DEM cannot be 8bit')
@@ -164,6 +170,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                           transform=tile_trs,
                           crs=crs) as dst:
                     dst.write(img)
+                
                 del img
 
                 if cog in ['Yes','yes','Y','y']:
