@@ -29,6 +29,12 @@ import pandas as pd
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
 from skimage.exposure import match_histograms
+from skimage import exposure
+from sklearn import preprocessing
+from skimage.filters import rank
+from skimage.morphology import ball
+from skimage import exposure
+
 def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog_cfg, bit, data_dict, dem, ixt, overlap):
         # from datetime import datetime as dt
     # start = dt.now()
@@ -61,16 +67,21 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
             h = math.floor(src_height/ht)
             w = math.floor(src_width/vt)
             if overlap != None:
-                x=math.floor(x-x*overlap/100)
-                y=math.floor(y-y*overlap/100)
+                x=round(x-x*overlap/100)
+                y=round(y-y*overlap/100)
 
-                h=math.floor(h+h*overlap/100)
+                h=round(h+h*overlap/100)
 
-                w=math.floor(w+w*overlap/100)
-                if h > src_height:
-                    h = math.floor(src_height/ht)
-                if w > src_width:
-                    w = math.floor(src_width/vt)
+                w=round(w+w*overlap/100)            
+                if ih+1 == ht:
+
+                    if (y+h)< src_height:
+                        h=src_height-y
+                if iw+1 == vt:
+                    if (x+w)< src_width:
+                        #print((x+w)<src_width)
+                        w=src_width-x
+                        #print(w)
             tile_win = Window(x,y,w,h)
             windows.append(tile_win)
             dst_trs = src.window_transform(tile_win)
@@ -135,6 +146,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                     pass
 
             try:
+                
                 img = src.read(window=tile_src_win,
                                out_shape=(cnt, tile_height, tile_width),
                                resampling=Resampling.cubic,
@@ -143,15 +155,25 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                 dt = img.dtype
                 if noData == None:
                     noData = 0
+                #img = exposure.equalize_adapthist(img, clip_limit=0.01)                   
                 if bit in ['yes','ye','y']:
                     noData=0                
                     img = cv.convertScaleAbs(img,alpha=(255.0/img.max()))
                     dt = img.dtype
-                    
-                if i==0:
-                    img0=img.copy()
-                else:
-                    img=matched = match_histograms(img, img0, channel_axis=-1)
+               
+                #min_max_scaler = preprocessing.MinMaxScaler()#feature_range=(0,255))
+                #img = min_max_scaler.fit_transform(img[:,:,0])
+                #img = reshape_as_raster(img[:,:,np.newaxis])
+                #img = exposure.equalize_adapthist(img, clip_limit=1)    
+                
+                #if i==0:
+                #    img0=img.copy()
+                #else:
+                #    img=matched = match_histograms(img, img0, channel_axis=-1)
+
+                #mg = exposure.equalize_adapthist(reshape_as_image(image)[:,:,0], clip_limit=0.01)
+                #img = exposure.adjust_log(img)
+
                 
                 if dem.lower() in ['yes','ye','y']:
 
@@ -174,7 +196,7 @@ def geoslicer(image, max_dim, savename, bc, sqcrp, res, cell_size, oxt, cog, cog
                 del img
 
                 if cog in ['Yes','yes','Y','y']:
-                    print('cog')
+#                    print('cog')
                     try:
 
                         source = savename
